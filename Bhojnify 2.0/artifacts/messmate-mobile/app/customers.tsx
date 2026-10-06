@@ -28,7 +28,7 @@ type FilterTab = 'all' | 'active' | 'expiring' | 'expired';
 
 export default function CustomersScreen() {
   const colors = useColors();
-  const { customers, addCustomer, markCustomerPaid, updateCustomer } = useMess();
+  const { customers, addCustomer, markCustomerPaid, updateCustomer, addPayment } = useMess();
   const { language, t } = useTranslation();
 
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
@@ -45,6 +45,7 @@ export default function CustomersScreen() {
   });
   const [phone, setPhone] = useState('');
   const [paymentStatus, setPaymentStatus] = useState<CustomerPaymentStatus>('Paid');
+  const [amountPaid, setAmountPaid] = useState('');
   const [imageUri, setImageUri] = useState<string | undefined>(undefined);
 
   // Auto calculate expiry when plan changes
@@ -149,6 +150,16 @@ export default function CustomersScreen() {
       paymentStatus,
       imageUri,
     });
+
+    if (paymentStatus === 'Paid' && amountPaid.trim() !== '' && !isNaN(Number(amountPaid))) {
+      addPayment({
+        amount: Number(amountPaid),
+        method: 'Cash/UPI',
+        note: `Subscription: ${name.trim()} - ${finalPlan}`,
+        date: todayStr,
+      });
+    }
+
     setName('');
     setSelectedPlan(MESS_PLANS[0]);
     setCustomPlan('');
@@ -159,6 +170,7 @@ export default function CustomersScreen() {
     setPhone('');
     setPaymentStatus('Paid');
     setImageUri(undefined);
+    setAmountPaid('');
   };
 
   const handleRenew = (customerId: string) => {
@@ -605,6 +617,16 @@ export default function CustomersScreen() {
             ))}
           </View>
         </View>
+
+        {paymentStatus === 'Paid' ? (
+          <FormField
+            label={t('amount')}
+            value={amountPaid}
+            onChangeText={setAmountPaid}
+            placeholder={t('enterPaymentAmount')}
+            keyboardType="numeric"
+          />
+        ) : null}
 
         <PrimaryButton label={t('addToCustomers')} icon="user-plus" onPress={add} />
       </View>
