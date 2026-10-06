@@ -1,0 +1,7 @@
+kotlin/.gradle/
+kotlin/build/
+kotlin/**/build/
+bhojnify-android-debug.apk
+node_modules/
+.expo/
+.idea/

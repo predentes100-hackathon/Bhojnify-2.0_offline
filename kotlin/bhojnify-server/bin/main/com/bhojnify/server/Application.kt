@@ -14,7 +14,7 @@ import java.io.File
 
 fun main(args: Array<String>) {
     val port = System.getenv("PORT")?.toIntOrNull() ?: 5000
-    val host = "0.0.0.0"
+    val host = "127.0.0.1"
 
     println("Starting Bhojnify Kotlin API Server on http://$host:$port")
 
