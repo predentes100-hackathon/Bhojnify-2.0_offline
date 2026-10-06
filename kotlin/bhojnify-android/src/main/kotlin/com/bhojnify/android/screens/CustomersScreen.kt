@@ -39,7 +39,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
     val context = LocalContext.current
 
     val customers = state.customers
-    val todayStr = LocalDate.now().toString()
+    val todayStr = DateUtils.todayString()
 
     var activeFilter by remember { mutableStateOf(CustomerFilter.ALL) }
     var name by remember { mutableStateOf("") }
@@ -86,25 +86,16 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
         }
     }
 
-    val activeCount = customers.count {
-        val days = DateUtils.daysBetween(todayStr, it.expiryDate)
-        days > 3
-    }
-    val expiringCount = customers.count {
-        val days = DateUtils.daysBetween(todayStr, it.expiryDate)
-        days in 0..3
-    }
-    val expiredCount = customers.count {
-        val days = DateUtils.daysBetween(todayStr, it.expiryDate)
-        days < 0
-    }
+    val activeCount = customers.count { DateUtils.getExpiryInfo(it.expiryDate, todayStr).status == com.bhojnify.core.model.ExpiryStatus.ACTIVE }
+    val expiringCount = customers.count { DateUtils.getExpiryInfo(it.expiryDate, todayStr).isExpiringSoon }
+    val expiredCount = customers.count { DateUtils.getExpiryInfo(it.expiryDate, todayStr).isExpired }
 
     val filteredCustomers = customers.filter {
-        val days = DateUtils.daysBetween(todayStr, it.expiryDate)
+        val info = DateUtils.getExpiryInfo(it.expiryDate, todayStr)
         when (activeFilter) {
-            CustomerFilter.ACTIVE -> days > 3
-            CustomerFilter.EXPIRING -> days in 0..3
-            CustomerFilter.EXPIRED -> days < 0
+            CustomerFilter.ACTIVE -> info.status == com.bhojnify.core.model.ExpiryStatus.ACTIVE
+            CustomerFilter.EXPIRING -> info.isExpiringSoon
+            CustomerFilter.EXPIRED -> info.isExpired
             CustomerFilter.ALL -> true
         }
     }
@@ -253,9 +244,10 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
         ) {
             if (filteredCustomers.isNotEmpty()) {
                 filteredCustomers.forEach { customer ->
-                    val daysRemaining = DateUtils.daysBetween(todayStr, customer.expiryDate)
-                    val isExpired = daysRemaining < 0
-                    val isExpiringSoon = daysRemaining in 0..3
+                    val info = DateUtils.getExpiryInfo(customer.expiryDate, todayStr)
+                    val daysRemaining = info.daysRemaining
+                    val isExpired = info.isExpired
+                    val isExpiringSoon = info.isExpiringSoon
 
                     val tone = when {
                         isExpired -> BadgeTone.RED

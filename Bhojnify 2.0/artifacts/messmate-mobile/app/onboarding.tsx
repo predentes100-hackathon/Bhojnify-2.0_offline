@@ -5,13 +5,16 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { FormField, PrimaryButton } from '@/components/UI';
 import { OwnerProfile, useMess } from '@/context/AppContext';
+import { Redirect } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useTranslation } from '@/hooks/useTranslation';
 
 export default function OnboardingScreen() {
   const colors = useColors();
-  const { completeOwnerSetup } = useMess();
+  const { completeOwnerSetup, onboardingComplete, hydrated } = useMess();
   const { language, setLanguage, t } = useTranslation();
+  if (hydrated && onboardingComplete) return <Redirect href="/(tabs)" />;
+
   const [name, setName] = useState('');
   const [messName, setMessName] = useState('');
   const [phone, setPhone] = useState('');

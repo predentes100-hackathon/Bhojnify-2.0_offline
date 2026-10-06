@@ -1,3 +1,5 @@
+import { isValidISODate, daysBetween } from '@/lib/dates';
+import { todayISO } from '@/lib/dates';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
@@ -31,7 +33,7 @@ export default function CustomersScreen() {
   const { customers, addCustomer, markCustomerPaid, updateCustomer, addPayment } = useMess();
   const { language, t } = useTranslation();
 
-  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const todayStr = useMemo(() => todayISO(), []);
 
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const [name, setName] = useState('');

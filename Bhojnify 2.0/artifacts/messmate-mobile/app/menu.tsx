@@ -1,3 +1,4 @@
+import { todayISO } from '@/lib/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -14,7 +15,7 @@ export default function MenuScreen() {
   const { menus, addMenu } = useMess();
   const { language, t } = useTranslation();
 
-  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const todayStr = useMemo(() => todayISO(), []);
   const tomorrowStr = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);

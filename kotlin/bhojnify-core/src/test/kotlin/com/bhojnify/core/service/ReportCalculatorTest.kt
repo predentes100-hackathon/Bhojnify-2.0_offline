@@ -25,10 +25,10 @@ class ReportCalculatorTest {
 
         val report = ReportCalculator.calculate(payments, expenses, inventory, attendanceCount = 14)
 
-        assertEquals(5500.0, report.revenue)
-        assertEquals(2500.0, report.costs)
-        assertEquals(3000.0, report.margin)
-        assertEquals(3500.0, report.stockValue) // (25 + 10) * 100
-        assertEquals(140, report.mealsServed)   // 14 + 126
+        assertEquals(5500.0, report.totalRevenue)
+        assertEquals(2500.0, report.totalExpenses)
+        assertEquals(3000.0, report.operatingSurplus)
+        assertEquals(3500.0, report.stockValueEstimate) // (25 + 10) * 100
+        assertEquals(14, report.mealsServedCount)
     }
 }

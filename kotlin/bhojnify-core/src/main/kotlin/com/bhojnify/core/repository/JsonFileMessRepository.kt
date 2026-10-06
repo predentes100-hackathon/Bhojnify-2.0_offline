@@ -10,6 +10,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 class JsonFileMessRepository(
     private val storageFile: File
@@ -34,6 +36,9 @@ class JsonFileMessRepository(
                 MessState.defaultInitialState()
             }
         } catch (e: Exception) {
+            System.err.println("State parsing failed! Corrupt file preserved.")
+            val backup = File(storageFile.parentFile, "${storageFile.name}.corrupt-${System.currentTimeMillis()}")
+            storageFile.renameTo(backup)
             MessState.defaultInitialState()
         }
     }
@@ -67,7 +72,9 @@ class JsonFileMessRepository(
         try {
             storageFile.parentFile?.mkdirs()
             val text = json.encodeToString(MessState.serializer(), state)
-            storageFile.writeText(text, Charsets.UTF_8)
+            val tempFile = File(storageFile.parentFile, "${storageFile.name}.tmp")
+            tempFile.writeText(text, Charsets.UTF_8)
+            Files.move(tempFile.toPath(), storageFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
         } catch (e: Exception) {
             System.err.println("Failed to persist state: ${e.message}")
         }

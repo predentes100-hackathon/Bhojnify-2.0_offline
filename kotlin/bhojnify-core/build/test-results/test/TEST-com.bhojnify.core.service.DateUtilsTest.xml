@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.bhojnify.core.service.DateUtilsTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-06T20:09:27" hostname="BOOK-UAR34K7PJL" time="0.02">
+  <properties/>
+  <testcase name="test daysBetween calculation()" classname="com.bhojnify.core.service.DateUtilsTest" time="0.014"/>
+  <testcase name="test leap year date addition()" classname="com.bhojnify.core.service.DateUtilsTest" time="0.003"/>
+  <testcase name="test addDays calculation()" classname="com.bhojnify.core.service.DateUtilsTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

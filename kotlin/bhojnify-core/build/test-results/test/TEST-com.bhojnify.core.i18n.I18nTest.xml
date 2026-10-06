@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.bhojnify.core.i18n.I18nTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-06T20:09:27" hostname="BOOK-UAR34K7PJL" time="0.053">
+  <properties/>
+  <testcase name="test english translation with variable substitution()" classname="com.bhojnify.core.i18n.I18nTest" time="0.043"/>
+  <testcase name="test localized values for meals and categories()" classname="com.bhojnify.core.i18n.I18nTest" time="0.001"/>
+  <testcase name="test marathi translation with variable substitution()" classname="com.bhojnify.core.i18n.I18nTest" time="0.002"/>
+  <testcase name="test plan extension notice translation in marathi()" classname="com.bhojnify.core.i18n.I18nTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

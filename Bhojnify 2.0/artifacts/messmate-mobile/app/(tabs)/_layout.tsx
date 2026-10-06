@@ -92,7 +92,8 @@ function ClassicTabLayout() {
 }
 
 export default function TabLayout() {
-  const { onboardingComplete } = useMess();
+  const { onboardingComplete, hydrated } = useMess();
+  if (!hydrated) return null;
   if (!onboardingComplete) return <Redirect href="/onboarding" />;
   if (isLiquidGlassAvailable()) {
     return <NativeTabLayout />;

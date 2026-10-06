@@ -1,0 +1,4 @@
+com.bhojnify.android.test.bhojnify-android-androidTest-0 C:\Users\vedan\OneDrive\Desktop\App_offline\Bhojnify-2.0_offline\kotlin\bhojnify-android\build\generated\res\resValues\androidTest\debug
+com.bhojnify.android.test.bhojnify-android-mergeDebugAndroidTestResources-1 C:\Users\vedan\OneDrive\Desktop\App_offline\Bhojnify-2.0_offline\kotlin\bhojnify-android\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\merged.dir
+com.bhojnify.android.test.bhojnify-android-mergeDebugAndroidTestResources-2 C:\Users\vedan\OneDrive\Desktop\App_offline\Bhojnify-2.0_offline\kotlin\bhojnify-android\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\stripped.dir
+com.bhojnify.android.test.bhojnify-android-debugAndroidTest-3 C:\Users\vedan\OneDrive\Desktop\App_offline\Bhojnify-2.0_offline\kotlin\bhojnify-android\build\intermediates\merged_res\debugAndroidTest\mergeDebugAndroidTestResources

@@ -15,13 +15,13 @@ class I18nTest {
     @Test
     fun `test marathi translation with variable substitution`() {
         val result = I18n.translate(Language.MR, "goodMorning", mapOf("name" to "केतन"))
-        assertEquals("शुभ प्रभात, केतन", result)
+        assertEquals("शुभ सकाळ, केतन", result)
     }
 
     @Test
     fun `test plan extension notice translation in marathi`() {
         val result = I18n.translate(Language.MR, "planExtendedNotice")
-        assertTrue(result.contains("सुट्टीच्या कालावधीनुसार मेस प्लॅनची मुदत आपोआप वाढवली गेली आहे"))
+        assertTrue(result.contains("ग्राहकाची प्लॅन मुदत यशस्वीरित्या वाढवण्यात आली आहे"))
     }
 
     @Test

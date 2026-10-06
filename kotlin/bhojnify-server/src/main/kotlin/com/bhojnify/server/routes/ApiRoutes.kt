@@ -31,6 +31,9 @@ data class CreateLeaveRequest(
 )
 
 @Serializable
+data class CompleteLeaveResponse(val completed: Boolean, val daysExtended: Long)
+
+@Serializable
 data class CompleteLeaveRequestBody(
     val returnDate: String
 )
@@ -188,7 +191,7 @@ fun Route.bhojnifyApiRoutes(repository: MessRepository) {
                     current.copy(leaves = updatedLeaves, customers = updatedCustomers)
                 }
 
-                call.respond(HttpStatusCode.OK, mapOf("completed" to true, "daysExtended" to daysMissed))
+                call.respond(HttpStatusCode.OK, CompleteLeaveResponse(completed = true, daysExtended = daysMissed))
             }
         }
 

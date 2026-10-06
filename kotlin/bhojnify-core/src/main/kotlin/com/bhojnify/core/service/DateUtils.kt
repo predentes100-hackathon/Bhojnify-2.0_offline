@@ -20,7 +20,7 @@ object DateUtils {
         return try {
             LocalDate.parse(dateStr.trim().take(10), ISO_FORMATTER)
         } catch (e: Exception) {
-            LocalDate.now()
+            throw IllegalArgumentException("Invalid date format: $dateStr")
         }
     }
 
@@ -31,7 +31,7 @@ object DateUtils {
             val formatter = DateTimeFormatter.ofPattern("d MMM", locale)
             date.format(formatter)
         } catch (e: Exception) {
-            value
+            value.toString()
         }
     }
 
@@ -42,7 +42,7 @@ object DateUtils {
             val formatter = DateTimeFormatter.ofPattern("EEEE, dd MMMM", locale)
             date.format(formatter)
         } catch (e: Exception) {
-            value
+            value.toString()
         }
     }
 
@@ -108,6 +108,6 @@ object DateUtils {
     fun daysBetween(fromStr: String, toStr: String): Long {
         val from = parseDate(fromStr)
         val to = parseDate(toStr)
-        return ChronoUnit.DAYS.between(from, to) + 1L
+        return ChronoUnit.DAYS.between(from, to)
     }
 }

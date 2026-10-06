@@ -4,6 +4,7 @@ import com.bhojnify.core.model.CustomerPaymentStatus
 import com.bhojnify.core.model.LeaveStatus
 import com.bhojnify.core.model.MessState
 import com.bhojnify.core.repository.MessRepository
+import com.bhojnify.core.repository.InMemoryMessRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -13,24 +14,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class InMemoryMessRepository : MessRepository {
-    private var state = MessState()
-
-    override suspend fun loadState(): MessState = state
-
-    override suspend fun saveState(state: MessState) {
-        this.state = state
-    }
-
-    override suspend fun updateState(transform: (MessState) -> MessState) {
-        state = transform(state)
-    }
-}
-
 @OptIn(ExperimentalCoroutinesApi::class)
 class MessStateManagerTest {
 
-    private lateinit classUnderTest: MessStateManager
+    private lateinit var classUnderTest: MessStateManager
     private val standardDispatcher = UnconfinedTestDispatcher()
     private val testScope = TestScope(standardDispatcher)
 

@@ -1,3 +1,4 @@
+import { todayISO } from '@/lib/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Alert, StyleSheet, Text, View } from 'react-native';
@@ -16,7 +17,10 @@ export default function PaymentsScreen() {
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState('UPI');
   const [note, setNote] = useState('');
-  const add = () => { if (!amount || !note) { Alert.alert(t('completePayment'), t('paymentRequiredMessage')); return; } addPayment({ amount: Number(amount), method, note, date: new Date().toISOString().slice(0, 10) }); setAmount(''); setNote(''); Alert.alert(t('paymentRecorded'), t('paymentRecordedMessage')); };
+  const add = () => { if (!amount || !note) { Alert.alert(t('completePayment'), t('paymentRequiredMessage')); return; } 
+  const val = Number(amount);
+  if (isNaN(val) || val <= 0) { Alert.alert(t('error'), t('invalidAmount')); return; }
+  addPayment({ amount: val, method, note, date: todayISO() }); setAmount(''); setNote(''); Alert.alert(t('paymentRecorded'), t('paymentRecordedMessage')); };
   return <KeyboardAwareScrollViewCompat style={[styles.screen, { backgroundColor: colors.background }]} contentContainerStyle={styles.content} bottomOffset={24} keyboardShouldPersistTaps="handled"><Header eyebrow={t('ownerTools')} title={t('paymentLedger')} subtitle={t('paymentSubtitle')} onPress={() => router.push('/(tabs)/profile')} /><View style={[styles.activeCard, { backgroundColor: colors.primary }]}><Ionicons name="checkmark-circle-outline" size={30} color={colors.accent} /><View><Text style={[styles.activeTitle, { color: colors.primaryForeground }]}>{t('ledgerUpToDate')}</Text><Text style={[styles.activeDetail, { color: colors.primaryForeground }]}>{t('recordsStayOnDevice')}</Text></View></View><SectionHeading title={t('pastPayments')} /><View style={[styles.list, { backgroundColor: colors.card, borderColor: colors.border }]}>{payments.map((payment, index) => <View key={payment.id} style={[styles.paymentRow, index < payments.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}><View style={[styles.paymentIcon, { backgroundColor: colors.secondary }]}><Ionicons name="receipt-outline" size={18} color={colors.primary} /></View><View style={styles.paymentCopy}><Text style={[styles.paymentNote, { color: colors.foreground }]}>{payment.note}</Text><Text style={[styles.paymentMeta, { color: colors.mutedForeground }]}>{payment.date} · {localizedValue(language, payment.method)}</Text></View><Text style={[styles.amount, { color: colors.foreground }]}>₹{payment.amount.toLocaleString()}</Text></View>)}</View><SectionHeading title={t('recordPayment')} /><View style={[styles.formCard, { backgroundColor: colors.card, borderColor: colors.border }]}><FormField label={t('amount')} value={amount} onChangeText={setAmount} placeholder={t('enterPaymentAmount')} keyboardType="numeric" /><FormField label={t('method')} value={method} onChangeText={setMethod} placeholder={t('enterPaymentMethod')} /><FormField label={t('note')} value={note} onChangeText={setNote} placeholder={t('enterPaymentNote')} /><PrimaryButton label={t('recordPaymentButton')} icon="check" onPress={add} /></View></KeyboardAwareScrollViewCompat>;
 }
 

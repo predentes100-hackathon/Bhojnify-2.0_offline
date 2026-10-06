@@ -39,12 +39,13 @@ fun main(args: Array<String>) = runBlocking {
     println("  - Menu Items: ${state.menus.size}")
 
     println("\n[2] Customers & Plan Expiry:")
-    val today = LocalDate.now().toString()
+    val today = DateUtils.todayString()
     state.customers.forEach { customer ->
-        val days = DateUtils.daysBetween(today, customer.expiryDate)
+        val info = DateUtils.getExpiryInfo(customer.expiryDate, today)
+        val days = info.daysRemaining
         val status = when {
-            days < 0 -> "[EXPIRED]"
-            days in 0..3 -> "[EXPIRING SOON - ${days}d left]"
+            info.isExpired -> "[EXPIRED]"
+            info.isExpiringSoon -> "[EXPIRING SOON - ${days}d left]"
             else -> "[ACTIVE - ${days}d left]"
         }
         println("  • ${customer.name.padEnd(18)} | ${customer.plan.padEnd(20)} | $status | Exp: ${customer.expiryDate}")
@@ -64,11 +65,11 @@ fun main(args: Array<String>) = runBlocking {
         inventory = state.inventory,
         attendanceCount = state.attendance.size
     )
-    println("  • Total Revenue  : ₹${"%,.2f".format(report.revenue)}")
-    println("  • Total Expenses : ₹${"%,.2f".format(report.costs)}")
-    println("  • Operating Margin: ₹${"%,.2f".format(report.margin)} (${if (report.margin >= 0) "Profit" else "Deficit"})")
-    println("  • Stock Estimate : ₹${"%,.2f".format(report.stockValue)}")
-    println("  • Meals Served   : ${report.mealsServed}")
+    println("  • Total Revenue  : ₹${"%,.2f".format(report.totalRevenue)}")
+    println("  • Total Expenses : ₹${"%,.2f".format(report.totalExpenses)}")
+    println("  • Operating Margin: ₹${"%,.2f".format(report.operatingSurplus)} (${if (report.operatingSurplus >= 0) "Profit" else "Deficit"})")
+    println("  • Stock Estimate : ₹${"%,.2f".format(report.stockValueEstimate)}")
+    println("  • Meals Served   : ${report.mealsServedCount}")
 
     println("\n[5] Multi-Language i18n Verification:")
     println("  EN: ${I18n.translate(Language.EN, "goodMorning", mapOf("name" to "Ketan"))}")

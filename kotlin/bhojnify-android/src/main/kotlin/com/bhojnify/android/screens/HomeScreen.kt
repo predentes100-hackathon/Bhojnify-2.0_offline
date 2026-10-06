@@ -50,7 +50,7 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
 
     // Note: Java default Locale mapping would be needed for exact formatting,
     // Using a simpler string for now, or just let i18n handle what it can
-    val todayLabel = LocalDate.now().toString()
+    val todayLabel = DateUtils.todayString()
 
     val expiringCustomers = reactToCustomers(customers)
 
@@ -249,12 +249,9 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
 }
 
 // Temporary calculation logic port for UI
-data class ExpiryInfo(val customer: com.bhojnify.core.model.Customer, val days: Long, val isExpiringSoon: Boolean, val isExpired: Boolean)
-
-private fun reactToCustomers(customers: List<com.bhojnify.core.model.Customer>): List<ExpiryInfo> {
-    val today = LocalDate.now().toString()
+private fun reactToCustomers(customers: List<com.bhojnify.core.model.Customer>): List<Pair<com.bhojnify.core.model.Customer, com.bhojnify.core.model.ExpiryInfo>> {
+    val today = DateUtils.todayString()
     return customers.map {
-        val days = DateUtils.daysBetween(today, it.expiryDate)
-        ExpiryInfo(it, days, days in 0..3, days < 0)
-    }.filter { it.isExpiringSoon || it.isExpired }
+        it to DateUtils.getExpiryInfo(it.expiryDate, today)
+    }.filter { it.second.isExpiringSoon || it.second.isExpired }
 }

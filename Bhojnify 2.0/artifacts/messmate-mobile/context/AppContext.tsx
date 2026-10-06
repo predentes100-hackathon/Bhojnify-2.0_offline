@@ -1,5 +1,6 @@
+import { todayISO, daysBetween, addDaysISO } from '@/lib/dates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useMemo, useState, useRef } from 'react';
 import { Language } from '@/lib/i18n';
 
 export type Role = 'owner';
@@ -116,6 +117,7 @@ export interface OwnerPolicies {
 }
 
 interface MessState {
+  hydrated: boolean;
   role: Role;
   language: Language;
   onboardingComplete: boolean;
@@ -160,11 +162,12 @@ interface MessActions {
 }
 
 const STORAGE_KEY = '@messmate/state-v1';
-const today = new Date().toISOString().slice(0, 10);
+const today = todayISO();
 const id = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 const initialState: MessState = {
   role: 'owner',
+  hydrated: false,
   language: 'en',
   onboardingComplete: false,
   credits: 18,
@@ -270,6 +273,7 @@ export function MessProvider({ children }: { children: ReactNode }) {
             policies: { ...initialState.policies, ...(parsed.policies ?? {}) },
             onboardingComplete: parsed.onboardingComplete === true,
             role: 'owner',
+  hydrated: false,
           });
         }
       })
@@ -277,8 +281,24 @@ export function MessProvider({ children }: { children: ReactNode }) {
       .finally(() => setHydrated(true));
   }, []);
 
+const saveTimeout = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    if (hydrated) AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => undefined);
+    if (!hydrated) return;
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(() => {
+      try {
+        const jsonValue = JSON.stringify(state);
+        AsyncStorage.setItem(STORAGE_KEY, jsonValue).catch(e => {
+          console.error("Failed to persist state: ", e);
+        });
+      } catch (error) {
+        console.error("Failed to serialize state: ", error);
+      }
+    }, 500);
+    return () => {
+      if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    };
   }, [state, hydrated]);
 
   const actions = useMemo<MessActions>(() => ({
@@ -289,7 +309,7 @@ export function MessProvider({ children }: { children: ReactNode }) {
       ...prev,
       credits: Math.max(0, prev.credits - 1),
       attendance: [
-        { id: id(), date: new Date().toISOString().slice(0, 10), meal, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), verified, method },
+        { id: id(), date: todayISO(), meal, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), verified, method },
         ...prev.attendance,
       ],
     })),
@@ -303,21 +323,19 @@ export function MessProvider({ children }: { children: ReactNode }) {
     completeLeave: (requestId, returnDate) => setState((prev) => {
       const leave = prev.leaves.find((l) => l.id === requestId);
       if (!leave || !leave.customerId) return prev;
-      const fromMs = new Date(`${leave.from}T12:00:00`).getTime();
-      const returnMs = new Date(`${returnDate}T12:00:00`).getTime();
-      const daysMissed = Math.max(0, Math.round((returnMs - fromMs) / 86400000) + 1);
+      
+      
+      const daysMissed = Math.max(0, daysBetween(leave.from, returnDate));
       return {
         ...prev,
         leaves: prev.leaves.map((l) => l.id === requestId ? { ...l, to: returnDate, status: 'Approved' } : l),
         customers: prev.customers.map((customer) => {
           if (customer.id !== leave.customerId || daysMissed <= 0) return customer;
-          const expiry = new Date(`${customer.expiryDate}T12:00:00`);
-          expiry.setDate(expiry.getDate() + daysMissed);
-          return { ...customer, expiryDate: expiry.toISOString().slice(0, 10) };
+          return { ...customer, expiryDate: addDaysISO(customer.expiryDate, daysMissed) };
         }),
       };
     }),
-    addFeedback: (dish, rating, note) => setState((prev) => ({ ...prev, feedback: [{ id: id(), dish, rating, note, date: new Date().toISOString().slice(0, 10) }, ...prev.feedback] })),
+    addFeedback: (dish, rating, note) => setState((prev) => ({ ...prev, feedback: [{ id: id(), dish, rating, note, date: todayISO() }, ...prev.feedback] })),
     addInventory: (item) => setState((prev) => ({ ...prev, inventory: [{ ...item, id: id() }, ...prev.inventory] })),
     removeInventory: (itemId) => setState((prev) => ({ ...prev, inventory: prev.inventory.filter((item) => item.id !== itemId) })),
     addMenu: (item) => setState((prev) => ({ ...prev, menus: [{ ...item, id: id() }, ...prev.menus] })),
@@ -335,7 +353,7 @@ export function MessProvider({ children }: { children: ReactNode }) {
             title,
             detail,
             dueDate: dueDate.toISOString().slice(0, 10),
-            createdAt: new Date().toISOString().slice(0, 10),
+            createdAt: todayISO(),
           },
           ...prev.reminders,
         ],
@@ -344,7 +362,7 @@ export function MessProvider({ children }: { children: ReactNode }) {
     resolveReminder: (reminderId) => setState((prev) => ({ ...prev, reminders: prev.reminders.filter((reminder) => reminder.id !== reminderId) })),
   }), []);
 
-  return <MessContext.Provider value={{ ...state, ...actions }}>{children}</MessContext.Provider>;
+  return <MessContext.Provider value={{ ...state, ...actions, hydrated }}>{children}</MessContext.Provider>;
 }
 
 export function useMess() {
@@ -357,10 +375,6 @@ export function formatDate(value: string, language: Language = 'en') {
   return new Date(`${value}T12:00:00`).toLocaleDateString(language === 'mr' ? 'mr-IN' : undefined, { day: 'numeric', month: 'short' });
 }
 
-export function daysUntil(value: string) {
-  const diff = new Date(`${value}T12:00:00`).getTime() - new Date(`${today}T12:00:00`).getTime();
-  return Math.max(0, Math.ceil(diff / 86400000));
-}
 
 export interface ExpiryInfo {
   daysRemaining: number;
@@ -374,7 +388,7 @@ export function getExpiryInfo(expiryDate: string): ExpiryInfo {
   if (!expiryDate) {
     return { daysRemaining: 0, status: 'active', isExpired: false, isExpiringSoon: false, isExpiringToday: false };
   }
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = todayISO();
   const diffMs = new Date(`${expiryDate}T12:00:00`).getTime() - new Date(`${todayStr}T12:00:00`).getTime();
   const daysRemaining = Math.round(diffMs / 86400000);
 

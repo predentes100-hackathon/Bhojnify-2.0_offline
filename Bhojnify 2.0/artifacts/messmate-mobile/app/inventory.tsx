@@ -1,3 +1,4 @@
+import { todayISO } from '@/lib/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -47,7 +48,7 @@ export default function InventoryScreen() {
     setReminderDays('');
   };
 
-  const currentDate = new Date().toISOString().slice(0, 10);
+  const currentDate = todayISO();
 
   return (
     <KeyboardAwareScrollViewCompat style={[styles.screen, { backgroundColor: colors.background }]} contentContainerStyle={styles.content} bottomOffset={24} keyboardShouldPersistTaps="handled">

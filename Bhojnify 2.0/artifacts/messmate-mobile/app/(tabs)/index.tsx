@@ -1,3 +1,4 @@
+import { todayISO } from '@/lib/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo } from 'react';
@@ -15,7 +16,7 @@ export default function HomeScreen() {
   const lowStock = inventory.filter((item) => item.quantity <= item.minimum);
   const revenue = payments.reduce((sum, payment) => sum + payment.amount, 0);
   const spend = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const currentDate = new Date().toISOString().slice(0, 10);
+  const currentDate = todayISO();
   const dueReminders = reminders.filter((reminder) => reminder.dueDate <= currentDate);
   const todayLabel = new Date().toLocaleDateString(language === 'mr' ? 'mr-IN' : undefined, {
     weekday: 'long',

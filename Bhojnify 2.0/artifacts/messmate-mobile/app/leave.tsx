@@ -1,3 +1,5 @@
+import { isValidISODate, daysBetween } from '@/lib/dates';
+import { todayISO } from '@/lib/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -14,7 +16,7 @@ export default function LeaveScreen() {
   const { customers, leaves, addLeave, updateLeaveStatus, updateLeave, deleteLeave, completeLeave } = useMess();
   const { language, t } = useTranslation();
 
-  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const todayStr = useMemo(() => todayISO(), []);
 
   const [showForm, setShowForm] = useState(false);
   const [editingLeaveId, setEditingLeaveId] = useState<string | null>(null);
