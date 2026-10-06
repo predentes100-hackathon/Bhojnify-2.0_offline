@@ -1,4 +1,4 @@
-#Wed Oct 07 01:02:22 IST 2026
+#Wed Oct 07 02:18:01 IST 2026
 base.0=C\:\\Users\\vedan\\OneDrive\\Desktop\\App_offline\\Bhojnify-2.0_offline\\kotlin\\bhojnify-android\\build\\intermediates\\dex\\debug\\mergeExtDexDebug\\classes.dex
 base.1=C\:\\Users\\vedan\\OneDrive\\Desktop\\App_offline\\Bhojnify-2.0_offline\\kotlin\\bhojnify-android\\build\\intermediates\\dex\\debug\\mergeLibDexDebug\\12\\classes.dex
 base.10=C\:\\Users\\vedan\\OneDrive\\Desktop\\App_offline\\Bhojnify-2.0_offline\\kotlin\\bhojnify-android\\build\\intermediates\\dex\\debug\\mergeExtDexDebug\\classes2.dex

@@ -40,7 +40,7 @@ const english: Dictionary = {
   'approvedLeaveDetail': 'Approved leave can be reflected in your local member records.',
   'attendance': 'Attendance',
   'attendanceLogged': 'Attendance logged',
-  'attendanceRate': '96% attendance',
+  
   'autoExtendSub': 'Automatically extend subscription based on the leave period',
   'belowMinimum': '{name} is below minimum',
   'breakfast': 'Breakfast',
@@ -315,8 +315,8 @@ const english: Dictionary = {
   'selectDate': 'Select date',
   'selectMeal': 'Select Meal',
   'selectPlan': 'Select plan',
-  'septemberReport': 'September report',
-  'septemberSpend': 'SEPTEMBER SPEND',
+  'monthlyReport': 'Monthly report',
+  'monthlySpend': 'MONTHLY SPEND',
   'serviceHealth': 'Service health',
   'setupWorkspace': 'Set up your local owner workspace. Your details and records stay on this device.',
   'shapeMeals': 'Shape the next four weeks of meals.',
@@ -343,7 +343,7 @@ const english: Dictionary = {
   'unpaid': 'Unpaid',
   'updateLeave': 'Update leave',
   'viewAll': 'View all',
-  'vsLastWeek': '+8% vs last week',
+  
   'waiting': '{count} waiting',
   'yourMess': 'Your mess',
 };
@@ -386,7 +386,7 @@ const marathi: Dictionary = {
   'approvedLeaveDetail': 'मंजूर रजा स्थानिक सदस्य नोंदींमध्ये दिसू शकते.',
   'attendance': 'उपस्थिती',
   'attendanceLogged': 'उपस्थिती नोंदवली',
-  'attendanceRate': '96% उपस्थिती',
+  
   'autoExtendSub': 'सुट्टीच्या कालावधीनुसार सबस्क्रिप्शन आपोआप वाढवा',
   'belowMinimum': '{name} किमान पातळीखाली आहे',
   'breakfast': 'नाश्ता',
@@ -661,8 +661,8 @@ const marathi: Dictionary = {
   'selectDate': 'तारीख निवडा',
   'selectMeal': 'जेवण निवडा',
   'selectPlan': 'प्लॅन निवडा',
-  'septemberReport': 'सप्टेंबर अहवाल',
-  'septemberSpend': 'सप्टेंबरचा खर्च',
+  'monthlyReport': 'मासिक अहवाल',
+  'monthlySpend': 'मासिक खर्च',
   'serviceHealth': 'सेवेचे आरोग्य',
   'setupWorkspace': 'तुमचे स्थानिक मालक कार्यक्षेत्र तयार करा. तुमची माहिती आणि नोंदी या डिव्हाइसवरच राहतील.',
   'shapeMeals': 'पुढील चार आठवड्यांच्या जेवणाचे नियोजन करा.',
@@ -689,7 +689,7 @@ const marathi: Dictionary = {
   'unpaid': 'थकीत',
   'updateLeave': 'रजा अद्ययावत करा',
   'viewAll': 'सर्व पाहा',
-  'vsLastWeek': 'मागील आठवड्यापेक्षा +8%',
+  
   'waiting': '{count} प्रतीक्षेत',
   'yourMess': 'तुमचा मेस',
 };
