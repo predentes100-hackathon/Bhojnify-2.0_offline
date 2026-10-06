@@ -37,7 +37,7 @@ fun Header(
             .fillMaxWidth()
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        alignment = Alignment.Top
+        verticalAlignment = Alignment.Top
     ) {
         Column(modifier = Modifier.weight(1f)) {
             if (eyebrow != null) {
@@ -99,7 +99,7 @@ fun SectionHeading(
             .fillMaxWidth()
             .padding(top = 12.dp, bottom = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        alignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = title,
@@ -220,7 +220,7 @@ fun IconTile(
         contentAlignment = Alignment.Center
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterVertically,
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Box(

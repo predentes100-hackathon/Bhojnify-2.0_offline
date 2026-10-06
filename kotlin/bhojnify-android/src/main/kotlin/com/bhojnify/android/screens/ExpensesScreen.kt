@@ -77,11 +77,10 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
             Column {
                 Text(
                     text = viewModel.t("septemberSpend").uppercase(),
-                    color = colors.card,
+                    color = colors.card.copy(alpha = 0.68f),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.3.sp,
-                    opacity = 0.68f
+                    letterSpacing = 1.3.sp
                 )
                 Text(
                     text = "₹${"%,.0f".format(totalSpend)}",

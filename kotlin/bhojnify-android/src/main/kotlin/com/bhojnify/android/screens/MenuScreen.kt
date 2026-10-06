@@ -91,7 +91,7 @@ fun MenuScreen(navController: NavController, viewModel: MessViewModel) {
             Icon(Icons.Default.CalendarToday, null, tint = colors.accent, modifier = Modifier.size(26.dp))
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(text = viewModel.t("nextUp"), color = colors.primaryForeground, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-                Text(text = viewModel.t("planAhead"), color = colors.primaryForeground, fontSize = 12.sp, opacity = 0.76f)
+                Text(text = viewModel.t("planAhead"), color = colors.primaryForeground.copy(alpha = 0.76f), fontSize = 12.sp)
             }
         }
 

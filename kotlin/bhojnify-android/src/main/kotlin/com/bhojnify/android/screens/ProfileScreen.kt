@@ -1,6 +1,8 @@
 package com.bhojnify.android.screens
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -172,7 +175,7 @@ fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
             color = colors.mutedForeground,
             fontSize = 12.sp,
             lineHeight = 18.sp,
-            modifier = Modifier.padding(top = (-10).dp)
+            modifier = Modifier.offset(y = (-10).dp)
         )
 
         // Rules Card
@@ -355,6 +358,76 @@ fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
                         fontWeight = FontWeight.Bold,
                         color = if (isMr) colors.primaryForeground else colors.foreground
                     )
+                }
+            }
+        }
+
+        SectionHeading(title = "Data Management")
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(18.dp))
+                .border(1.dp, colors.border, RoundedCornerShape(18.dp))
+                .background(colors.card)
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(text = "Backup and restore your local data", fontSize = 12.sp, color = colors.mutedForeground)
+            
+            val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+                uri?.let {
+                    if (com.bhojnify.android.utils.BackupManager.exportData(context, it, state)) {
+                        Toast.makeText(context, "Data exported successfully", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Failed to export data", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+            val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                uri?.let { fileUri ->
+                    val importedState = com.bhojnify.android.utils.BackupManager.importData(context, fileUri)
+                    if (importedState != null) {
+                        viewModel.replaceState(importedState)
+                        Toast.makeText(context, "Data imported successfully", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Failed to import data", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(colors.secondary)
+                        .clickable { exportLauncher.launch("messmate_backup_${System.currentTimeMillis()}.json") }
+                        .padding(14.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Upload, null, tint = colors.primary, modifier = Modifier.size(18.dp))
+                        Text(text = "Export Backup", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.primary)
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(colors.secondary)
+                        .clickable { importLauncher.launch(arrayOf("application/json", "*/*")) }
+                        .padding(14.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Download, null, tint = colors.primary, modifier = Modifier.size(18.dp))
+                        Text(text = "Import Backup", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.primary)
+                    }
                 }
             }
         }

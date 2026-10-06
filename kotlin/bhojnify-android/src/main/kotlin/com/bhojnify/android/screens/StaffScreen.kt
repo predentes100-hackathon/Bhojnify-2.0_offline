@@ -79,7 +79,7 @@ fun StaffScreen(navController: NavController, viewModel: MessViewModel) {
                 Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Icon(Icons.Default.People, null, tint = colors.accent, modifier = Modifier.size(24.dp))
                     Text(text = "${staff.size}", color = colors.primaryForeground, fontSize = 23.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 5.dp))
-                    Text(text = viewModel.t("teamMembers"), color = colors.primaryForeground, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, opacity = 0.76f)
+                    Text(text = viewModel.t("teamMembers"), color = colors.primaryForeground.copy(alpha = 0.76f), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
 

@@ -100,6 +100,8 @@ class MessViewModel(application: Application) : AndroidViewModel(application) {
         stateManager.addReminder(title, daysFromNow, detail)
 
     fun resolveReminder(id: String) = stateManager.resolveReminder(id)
+    fun replaceState(state: MessState) = stateManager.replaceState(state)
+
     fun addFeedback(dish: String, rating: Int, note: String) =
         stateManager.addFeedback(dish, rating, note)
 }

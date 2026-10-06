@@ -339,4 +339,9 @@ class MessStateManager(
             }
         }
     }
+    fun replaceState(newState: MessState) {
+        scope.launch {
+            repository.updateState { newState }
+        }
+    }
 }

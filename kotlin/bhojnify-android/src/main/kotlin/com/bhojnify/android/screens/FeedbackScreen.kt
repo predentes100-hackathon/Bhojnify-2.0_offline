@@ -68,10 +68,9 @@ fun FeedbackScreen(navController: NavController, viewModel: MessViewModel) {
                 )
                 Text(
                     text = viewModel.t("improveMenu"),
-                    color = colors.primaryForeground,
+                    color = colors.primaryForeground.copy(alpha = 0.78f),
                     fontSize = 12.sp,
-                    lineHeight = 18.sp,
-                    opacity = 0.78f
+                    lineHeight = 18.sp
                 )
             }
         }

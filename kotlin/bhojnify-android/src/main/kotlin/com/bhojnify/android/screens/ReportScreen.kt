@@ -57,14 +57,13 @@ fun ReportScreen(navController: NavController, viewModel: MessViewModel) {
             Column {
                 Text(
                     text = viewModel.t("operatingSurplus").uppercase(),
-                    color = colors.primaryForeground,
+                    color = colors.primaryForeground.copy(alpha = 0.7f),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.3.sp,
-                    opacity = 0.7f
+                    letterSpacing = 1.3.sp
                 )
                 Text(
-                    text = "₹${"%,.0f".format(summary.margin)}",
+                    text = "₹${"%,.0f".format(summary.operatingSurplus)}",
                     color = colors.primaryForeground,
                     fontSize = 33.sp,
                     fontWeight = FontWeight.Bold,
@@ -72,9 +71,8 @@ fun ReportScreen(navController: NavController, viewModel: MessViewModel) {
                 )
                 Text(
                     text = viewModel.t("revenueLessExpenses"),
-                    color = colors.primaryForeground,
+                    color = colors.primaryForeground.copy(alpha = 0.76f),
                     fontSize = 11.sp,
-                    opacity = 0.76f,
                     modifier = Modifier.padding(top = 3.dp)
                 )
             }
@@ -93,7 +91,7 @@ fun ReportScreen(navController: NavController, viewModel: MessViewModel) {
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(text = viewModel.t("revenue").uppercase(), color = colors.mutedForeground, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.1.sp)
-                    Text(text = "₹${"%,.0f".format(summary.revenue)}", color = colors.foreground, fontSize = 21.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "₹${"%,.0f".format(summary.totalRevenue)}", color = colors.foreground, fontSize = 21.sp, fontWeight = FontWeight.Bold)
                     Badge(label = "+12%")
                 }
             }
@@ -108,7 +106,7 @@ fun ReportScreen(navController: NavController, viewModel: MessViewModel) {
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(text = viewModel.t("expenses").uppercase(), color = colors.mutedForeground, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.1.sp)
-                    Text(text = "₹${"%,.0f".format(summary.costs)}", color = colors.foreground, fontSize = 21.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "₹${"%,.0f".format(summary.totalExpenses)}", color = colors.foreground, fontSize = 21.sp, fontWeight = FontWeight.Bold)
                     Badge(label = viewModel.t("tracked"), tone = BadgeTone.GRAY)
                 }
             }
@@ -129,7 +127,7 @@ fun ReportScreen(navController: NavController, viewModel: MessViewModel) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = viewModel.t("mealsServed"), color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                Text(text = "${summary.mealsServed}", color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(text = "${summary.mealsServedCount}", color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
             LinearProgressIndicator(
                 progress = { 0.78f },
@@ -146,7 +144,7 @@ fun ReportScreen(navController: NavController, viewModel: MessViewModel) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = viewModel.t("stockValueEstimate"), color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                Text(text = "₹${"%,.0f".format(summary.stockValue)}", color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(text = "₹${"%,.0f".format(summary.stockValueEstimate)}", color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
             LinearProgressIndicator(
                 progress = { 0.54f },

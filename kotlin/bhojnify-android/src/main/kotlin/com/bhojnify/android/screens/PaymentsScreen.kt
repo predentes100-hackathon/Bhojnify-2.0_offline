@@ -75,7 +75,7 @@ fun PaymentsScreen(navController: NavController, viewModel: MessViewModel) {
             Icon(Icons.Default.CheckCircle, null, tint = colors.accent, modifier = Modifier.size(30.dp))
             Column {
                 Text(text = viewModel.t("ledgerUpToDate"), color = colors.primaryForeground, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Text(text = viewModel.t("recordsStayOnDevice"), color = colors.primaryForeground, fontSize = 11.sp, opacity = 0.76f, modifier = Modifier.padding(top = 4.dp))
+                Text(text = viewModel.t("recordsStayOnDevice"), color = colors.primaryForeground.copy(alpha = 0.76f), fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
             }
         }
 

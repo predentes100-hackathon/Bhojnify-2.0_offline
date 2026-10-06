@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -190,7 +191,7 @@ fun OnboardingScreen(navController: NavController, viewModel: MessViewModel) {
                 fontSize = 12.sp,
                 lineHeight = 17.sp,
                 color = colors.mutedForeground,
-                modifier = Modifier.padding(top = (-8).dp)
+                modifier = Modifier.offset(y = (-8).dp)
             )
 
             FormField(
