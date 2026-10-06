@@ -287,7 +287,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                             Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                                 Badge(label = label, tone = tone)
                                 Badge(
-                                    label = viewModel.localized(customer.paymentStatus.name),
+                                    label = viewModel.localized(customer.paymentStatus.displayName),
                                     tone = if (customer.paymentStatus == CustomerPaymentStatus.PAID) BadgeTone.GREEN else BadgeTone.AMBER
                                 )
                             }
@@ -389,7 +389,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                             .clickable { paymentStatus = status },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = viewModel.localized(status.name), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
+                        Text(text = viewModel.localized(status.displayName), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
                     }
                 }
             }

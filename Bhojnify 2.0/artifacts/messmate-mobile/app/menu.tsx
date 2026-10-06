@@ -1,4 +1,4 @@
-import { todayISO } from '@/lib/dates';
+import { todayISO, isValidISODate } from '@/lib/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';

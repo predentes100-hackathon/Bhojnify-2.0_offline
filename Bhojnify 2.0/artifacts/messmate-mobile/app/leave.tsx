@@ -30,7 +30,7 @@ export default function LeaveScreen() {
   const [returnDateInput, setReturnDateInput] = useState(todayStr);
 
   const pendingLeaves = useMemo(
-    () => leaves.filter((leave) => leave.status === 'Pending' || !leave.to),
+    () => leaves.filter((leave) => leave.status === 'Pending'),
     [leaves]
   );
 

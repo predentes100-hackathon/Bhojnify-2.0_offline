@@ -38,7 +38,7 @@ export interface Customer {
 }
 
 export const MESS_PLANS = [
-  'Monthly Unlimited (2 Meals)',
+  'Monthly Two-Meal',
   'Monthly Lunch Only',
   'Monthly Dinner Only',
   '15-Day Flexi Plan',
@@ -48,6 +48,7 @@ export const MESS_PLANS = [
 
 export interface Payment {
   id: string;
+  customerId?: string;
   date: string;
   amount: number;
   method: string;
@@ -143,7 +144,7 @@ interface MessActions {
   updatePolicies: (policies: OwnerPolicies) => void;
   markAttendance: (meal: Meal, verified: boolean, method: string) => void;
   addCustomer: (customer: Omit<Customer, 'id'>) => void;
-  markCustomerPaid: (id: string) => void;
+  markCustomerPaid: (id: string, amount: number) => void;
   addLeave: (customerId: string, from: string, to: string | undefined, reason: string) => void;
   updateLeaveStatus: (id: string, status: LeaveRequest['status']) => void;
   updateLeave: (id: string, updates: Partial<Omit<LeaveRequest, 'id'>>) => void;
@@ -183,10 +184,10 @@ const initialState: MessState = {
     {
       id: 'c1',
       name: 'Rohan Patil',
-      plan: 'Monthly Unlimited (2 Meals)',
+      plan: 'Monthly Two-Meal',
       joiningDate: '2026-09-01',
       expiryDate: '2026-10-01',
-      paymentStatus: 'Paid',
+      paymentStatus: 'Paid' as const,
       phone: '+91 98221 44550',
     },
     {
@@ -195,7 +196,7 @@ const initialState: MessState = {
       plan: 'Monthly Lunch Only',
       joiningDate: '2026-08-13',
       expiryDate: '2026-09-12',
-      paymentStatus: 'Paid',
+      paymentStatus: 'Paid' as const,
       phone: '+91 97654 32100',
     },
     {
@@ -204,7 +205,7 @@ const initialState: MessState = {
       plan: 'Monthly Dinner Only',
       joiningDate: '2026-08-11',
       expiryDate: today,
-      paymentStatus: 'Paid',
+      paymentStatus: 'Paid' as const,
       phone: '+91 98900 11223',
     },
     {
@@ -314,7 +315,11 @@ const saveTimeout = useRef<NodeJS.Timeout | null>(null);
       ],
     })),
     addCustomer: (customer) => setState((prev) => ({ ...prev, customers: [{ ...customer, id: id() }, ...prev.customers] })),
-    markCustomerPaid: (customerId) => setState((prev) => ({ ...prev, customers: prev.customers.map((customer) => customer.id === customerId ? { ...customer, paymentStatus: 'Paid' } : customer) })),
+    markCustomerPaid: (customerId, amount) => setState((prev) => {
+      const customers = prev.customers.map((c) => c.id === customerId ? { ...c, paymentStatus: 'Paid' as const } : c);
+      const payment: Payment = { id: id(), date: todayISO(), amount, method: 'Cash', note: 'Marked as paid', customerId };
+      return { ...prev, customers, payments: [payment, ...prev.payments] };
+    }),
     addLeave: (customerId, from, to, reason) => setState((prev) => ({ ...prev, leaves: [{ id: id(), customerId, from, to, reason, status: 'Pending' }, ...prev.leaves] })),
     updateLeaveStatus: (requestId, status) => setState((prev) => ({ ...prev, leaves: prev.leaves.map((leave) => leave.id === requestId ? { ...leave, status } : leave) })),
     updateLeave: (requestId, updates) => setState((prev) => ({ ...prev, leaves: prev.leaves.map((leave) => leave.id === requestId ? { ...leave, ...updates } : leave) })),

@@ -18,6 +18,11 @@ export default function HomeScreen() {
   const spend = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const currentDate = todayISO();
   const dueReminders = reminders.filter((reminder) => reminder.dueDate <= currentDate);
+  
+  const hour = new Date().getHours();
+  const greetingKey = hour < 12 ? 'goodMorning' : hour < 17 ? 'goodAfternoon' : 'goodEvening';
+  const greeting = t(greetingKey, { name: profile.name || t('owner') }) || 'Good Morning';
+
   const todayLabel = new Date().toLocaleDateString(language === 'mr' ? 'mr-IN' : undefined, {
     weekday: 'long',
     day: '2-digit',
@@ -34,7 +39,7 @@ export default function HomeScreen() {
     <Screen>
       <Header
         eyebrow={`${t('ownerWorkspace')} · ${todayLabel}`}
-        title={t('goodMorning', { name: profile.name || t('owner') })}
+        title={greeting}
         subtitle={profile.messName || t('herePulse')}
         onPress={() => router.push('/(tabs)/profile')}
       />
@@ -124,12 +129,12 @@ export default function HomeScreen() {
         <StatCard
           label={t('mealsServed').toUpperCase()}
           value={`${attendance.length}`}
-          detail={t('vsLastWeek')}
+          detail={''}
         />
         <StatCard
           label={t('revenue').toUpperCase()}
           value={`₹${(revenue / 1000).toFixed(1)}k`}
-          detail={t('thisMonth')}
+          detail={''}
           tone="amber"
         />
       </View>
@@ -137,13 +142,13 @@ export default function HomeScreen() {
         <StatCard
           label={t('expenses').toUpperCase()}
           value={`₹${(spend / 1000).toFixed(1)}k`}
-          detail={t('thisMonth')}
+          detail={''}
           tone="red"
         />
         <StatCard
           label={t('activeMembers').toUpperCase()}
           value={`${customers.length}`}
-          detail={t('attendanceRate')}
+          detail={''}
         />
       </View>
 
@@ -152,7 +157,7 @@ export default function HomeScreen() {
         <IconTile
           icon="scan-outline"
           label={t('attendance')}
-          onPress={() => markAttendance('Lunch', true, 'Manual Entry')}
+          onPress={() => router.push('/attendance')}
         />
         <IconTile
           icon="people-outline"

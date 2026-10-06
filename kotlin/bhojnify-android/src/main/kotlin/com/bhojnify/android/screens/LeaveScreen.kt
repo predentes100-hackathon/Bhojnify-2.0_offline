@@ -198,7 +198,7 @@ fun LeaveScreen(navController: NavController, viewModel: MessViewModel) {
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                     Text(text = customer.name, color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                    Text(text = "${customer.plan} · ${viewModel.localized(customer.paymentStatus.name)}", color = colors.mutedForeground, fontSize = 10.sp)
+                                    Text(text = "${customer.plan} · ${viewModel.localized(customer.paymentStatus.displayName)}", color = colors.mutedForeground, fontSize = 10.sp)
                                 }
                                 Icon(
                                     if (isSelected) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
@@ -255,7 +255,7 @@ fun LeaveScreen(navController: NavController, viewModel: MessViewModel) {
                                     Badge(label = viewModel.t("holidayPending"), tone = BadgeTone.AMBER)
                                 } else {
                                     Badge(
-                                        label = viewModel.localized(leave.status.name),
+                                        label = viewModel.localized(leave.status.displayName),
                                         tone = if (leave.status == LeaveStatus.APPROVED) BadgeTone.GREEN else BadgeTone.RED
                                     )
                                 }

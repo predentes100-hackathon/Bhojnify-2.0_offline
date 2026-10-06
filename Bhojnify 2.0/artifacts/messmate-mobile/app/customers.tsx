@@ -1,5 +1,4 @@
-import { isValidISODate, daysBetween } from '@/lib/dates';
-import { todayISO } from '@/lib/dates';
+import { isValidISODate, daysBetween, addDaysISO, todayISO } from '@/lib/dates';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
@@ -175,17 +174,47 @@ export default function CustomersScreen() {
     setAmountPaid('');
   };
 
-  const handleRenew = (customerId: string) => {
-    const d = new Date();
-    const newJoining = d.toISOString().slice(0, 10);
-    d.setDate(d.getDate() + 30);
-    const newExpiry = d.toISOString().slice(0, 10);
+  const [renewModalVisible, setRenewModalVisible] = useState(false);
+  const [renewCustomerId, setRenewCustomerId] = useState('');
+  const [renewAmount, setRenewAmount] = useState('');
 
-    updateCustomer(customerId, {
-      joiningDate: newJoining,
+  const confirmRenew = () => {
+    const customer = customers.find(c => c.id === renewCustomerId);
+    if (!customer) return;
+    
+    // Duration based on plan
+    let duration = 30;
+    if (customer.plan.includes('15')) duration = 15;
+    if (customer.plan.includes('Daily') || customer.plan.includes('Per Meal')) duration = 1;
+    
+    const amt = Number(renewAmount);
+    if (isNaN(amt) || amt <= 0) {
+      Alert.alert(t('error'), t('invalidAmount'));
+      return;
+    }
+    
+    const info = getExpiryInfo(customer.expiryDate);
+    const baseDate = info.status === 'expired' || !customer.expiryDate ? todayISO() : customer.expiryDate;
+    const newExpiry = addDaysISO(baseDate, duration);
+    
+    updateCustomer(renewCustomerId, {
       expiryDate: newExpiry,
       paymentStatus: 'Paid',
     });
+    addPayment({ amount: amt, method: 'Cash', note: 'Plan Renewal', customerId: renewCustomerId, date: todayISO() });
+    
+    setRenewModalVisible(false);
+    setRenewAmount('');
+  };
+
+  const handleRenew = (customerId: string) => {
+    setRenewCustomerId(customerId);
+    setRenewModalVisible(true);
+  };
+  
+  const handleMarkPaid = (customerId: string) => {
+    setRenewCustomerId(customerId);
+    setRenewModalVisible(true); // Reusing the modal
   };
 
   // Compute metrics
@@ -443,7 +472,7 @@ export default function CustomersScreen() {
                 ) : customer.paymentStatus === 'Unpaid' ? (
                   <Pressable
                     testID={`mark-paid-${customer.id}`}
-                    onPress={() => markCustomerPaid(customer.id)}
+                    onPress={() => handleMarkPaid(customer.id)}
                     style={({ pressed }) => [
                       styles.actionButton,
                       { backgroundColor: colors.secondary, opacity: pressed ? 0.72 : 1 },

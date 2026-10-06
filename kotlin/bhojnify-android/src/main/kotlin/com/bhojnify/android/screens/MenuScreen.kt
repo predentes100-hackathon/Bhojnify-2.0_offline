@@ -135,7 +135,7 @@ fun MenuScreen(navController: NavController, viewModel: MessViewModel) {
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = viewModel.localized(item.meal.name).take(4),
+                                        text = viewModel.localized(item.meal.displayName).take(4),
                                         color = colors.primary,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold
@@ -148,7 +148,7 @@ fun MenuScreen(navController: NavController, viewModel: MessViewModel) {
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text(text = viewModel.localized(item.meal.name), color = colors.mutedForeground, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                        Text(text = viewModel.localized(item.meal.displayName), color = colors.mutedForeground, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                                         Badge(label = viewModel.t("published"))
                                     }
                                     Text(text = item.dish, color = colors.foreground, fontSize = 15.sp, fontWeight = FontWeight.Bold)
@@ -220,7 +220,7 @@ fun MenuScreen(navController: NavController, viewModel: MessViewModel) {
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = viewModel.localized(slot.name),
+                            text = viewModel.localized(slot.displayName),
                             color = if (isSelected) colors.primary else colors.foreground,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
