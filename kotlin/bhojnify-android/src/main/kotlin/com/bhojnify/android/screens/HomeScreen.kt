@@ -195,7 +195,7 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StatCard(
                 label = viewModel.t("mealsServed").uppercase(),
-                value = "${attendance.size + 126}",
+                value = "${attendance.size}",
                 detail = viewModel.t("vsLastWeek"),
                 modifier = Modifier.weight(1f)
             )

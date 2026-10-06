@@ -100,7 +100,7 @@ fun AdminScreen(navController: NavController, viewModel: MessViewModel) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StatCard(
                 label = viewModel.t("attendance").uppercase(),
-                value = "${attendance.size + 126}",
+                value = "${attendance.size}",
                 detail = viewModel.t("todayRecords"),
                 modifier = Modifier.weight(1f)
             )
