@@ -9,7 +9,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 export default function HomeScreen() {
   const colors = useColors();
-  const { profile, inventory, attendance, expenses, payments, reminders, resolveReminder, customers } = useMess();
+  const { profile, inventory, attendance, expenses, payments, reminders, resolveReminder, customers, markAttendance } = useMess();
   const { language, t } = useTranslation();
 
   const lowStock = inventory.filter((item) => item.quantity <= item.minimum);
@@ -122,7 +122,7 @@ export default function HomeScreen() {
       <View style={styles.statsRow}>
         <StatCard
           label={t('mealsServed').toUpperCase()}
-          value={`${attendance.length + 126}`}
+          value={`${attendance.length}`}
           detail={t('vsLastWeek')}
         />
         <StatCard
@@ -149,6 +149,11 @@ export default function HomeScreen() {
       <SectionHeading title={t('runMessAction')} />
       <View style={styles.actionGrid}>
         <IconTile
+          icon="scan-outline"
+          label={t('attendance')}
+          onPress={() => markAttendance('Lunch', true, 'Manual Entry')}
+        />
+        <IconTile
           icon="people-outline"
           label={t('customers')}
           onPress={() => router.push('/customers')}
@@ -157,11 +162,6 @@ export default function HomeScreen() {
           icon="restaurant-outline"
           label={t('menuPlan')}
           onPress={() => router.push('/menu')}
-        />
-        <IconTile
-          icon="calendar-outline"
-          label={t('leaves')}
-          onPress={() => router.push('/leave')}
         />
         <IconTile
           icon="cube-outline"
