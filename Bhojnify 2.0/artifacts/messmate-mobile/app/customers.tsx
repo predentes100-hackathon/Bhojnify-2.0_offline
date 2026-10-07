@@ -142,7 +142,7 @@ export default function CustomersScreen() {
       Alert.alert(t('completeCustomer'), t('customerRequiredMessage'));
       return;
     }
-    addCustomer({
+    const newCustomerId = addCustomer({
       name: name.trim(),
       plan: finalPlan,
       joiningDate: joiningDate.trim(),
@@ -157,8 +157,24 @@ export default function CustomersScreen() {
         amount: Number(amountPaid),
         method: 'Cash/UPI',
         note: `Subscription: ${name.trim()} - ${finalPlan}`,
+        customerId: newCustomerId,
         date: todayStr,
       });
+    } else if (paymentStatus === 'Paid') {
+        const p = finalPlan.toLowerCase();
+        let derivedAmount = 3000;
+        if (p.includes('flexi') || p.includes('15')) derivedAmount = 1500;
+        else if (p.includes('two') || p.includes('both')) derivedAmount = 4500;
+        else if (p.includes('lunch') || p.includes('dinner')) derivedAmount = 2500;
+        else if (p.includes('daily') || p.includes('per meal')) derivedAmount = 150;
+        
+        addPayment({
+          amount: derivedAmount,
+          method: 'Cash/UPI',
+          note: `Subscription: ${name.trim()} - ${finalPlan} (Base Fallback)`,
+          customerId: newCustomerId,
+          date: todayStr,
+        });
     }
 
     setName('');
@@ -661,7 +677,38 @@ export default function CustomersScreen() {
 
         <PrimaryButton label={t('addToCustomers')} icon="user-plus" onPress={add} />
       </View>
+
+      {/* Renew / Mark Paid Modal */}
+      {renewModalVisible && (
+        <View style={StyleSheet.absoluteFill}>
+          <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]} />
+          <View style={styles.modalContentWrapper}>
+            <View style={[styles.modalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.modalTitle, { color: colors.foreground }]}>{t('markAsPaid')} / {t('renewPlan')}</Text>
+              <Text style={[styles.modalDetail, { color: colors.mutedForeground }]}>{t('enterPaymentAmount')}</Text>
+              
+              <FormField 
+                label={t('amount')} 
+                value={renewAmount} 
+                onChangeText={setRenewAmount} 
+                keyboardType="numeric" 
+                placeholder="0"
+              />
+              
+              <View style={styles.modalActions}>
+                <Pressable onPress={() => { setRenewModalVisible(false); setRenewAmount(''); }} style={[styles.modalButton, { backgroundColor: colors.muted }]}>
+                  <Text style={[styles.modalButtonText, { color: colors.foreground }]}>{t('cancel')}</Text>
+                </Pressable>
+                <Pressable onPress={confirmRenew} style={[styles.modalButton, { backgroundColor: colors.primary }]}>
+                  <Text style={[styles.modalButtonText, { color: colors.primaryForeground }]}>{t('confirm')}</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
     </KeyboardAwareScrollViewCompat>
+
   );
 }
 
@@ -772,5 +819,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
+
   statusOptionText: { fontSize: 13, fontWeight: '700' },
+  modalOverlay: { ...StyleSheet.absoluteFillObject },
+  modalContentWrapper: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalCard: { width: '100%', borderWidth: 1, borderRadius: 20, padding: 20, gap: 12 },
+  modalTitle: { fontSize: 18, fontWeight: '700' },
+  modalDetail: { fontSize: 13, marginBottom: 8 },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  modalButton: { flex: 1, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  modalButtonText: { fontSize: 14, fontWeight: '700' },
 });

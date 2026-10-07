@@ -143,7 +143,7 @@ interface MessActions {
   completeOwnerSetup: (profile: OwnerProfile) => void;
   updatePolicies: (policies: OwnerPolicies) => void;
   markAttendance: (meal: Meal, verified: boolean, method: string) => void;
-  addCustomer: (customer: Omit<Customer, 'id'>) => void;
+  addCustomer: (customer: Omit<Customer, 'id'>) => string;
   markCustomerPaid: (id: string, amount: number) => void;
   addLeave: (customerId: string, from: string, to: string | undefined, reason: string) => void;
   updateLeaveStatus: (id: string, status: LeaveRequest['status']) => void;
@@ -314,7 +314,11 @@ const saveTimeout = useRef<NodeJS.Timeout | null>(null);
         ...prev.attendance,
       ],
     })),
-    addCustomer: (customer) => setState((prev) => ({ ...prev, customers: [{ ...customer, id: id() }, ...prev.customers] })),
+    addCustomer: (customer) => {
+      const newId = id();
+      setState((prev) => ({ ...prev, customers: [{ ...customer, id: newId }, ...prev.customers] }));
+      return newId;
+    },
     markCustomerPaid: (customerId, amount) => setState((prev) => {
       const customers = prev.customers.map((c) => c.id === customerId ? { ...c, paymentStatus: 'Paid' as const } : c);
       const payment: Payment = { id: id(), date: todayISO(), amount, method: 'Cash', note: 'Marked as paid', customerId };

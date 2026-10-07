@@ -204,37 +204,9 @@ export default function HomeScreen() {
           </Pressable>
         ) : null}
 
-        {lowStock.length > 0 ? (
-          <Pressable
-            onPress={() => router.push('/inventory')}
-            style={[styles.attentionRow, expiringCustomers.length > 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}
-          >
-            <View style={[styles.attentionIcon, { backgroundColor: colors.accent }]}>
-              <Ionicons name="warning-outline" size={18} color={colors.accentForeground} />
-            </View>
-            <View style={styles.attentionCopy}>
-              <Text style={[styles.attentionTitle, { color: colors.foreground }]}>
-                {t('belowMinimum', { name: lowStock[0].name })}
-              </Text>
-              <Text style={[styles.attentionDetail, { color: colors.mutedForeground }]}>
-                {t('stockLeft', {
-                  quantity: lowStock[0].quantity,
-                  unit: lowStock[0].unit,
-                  minimum: lowStock[0].minimum,
-                })}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.mutedForeground} />
-          </Pressable>
-        ) : (
-          <Text style={[styles.attentionTitle, { color: colors.foreground }]}>
-            {t('allStockHealthy')}
-          </Text>
-        )}
-
         <Pressable
           onPress={() => router.push('/expenses')}
-          style={[styles.attentionRow, { borderTopWidth: 1, borderTopColor: colors.border }]}
+          style={[styles.attentionRow, expiringCustomers.length > 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}
         >
           <View style={[styles.attentionIcon, { backgroundColor: colors.secondary }]}>
             <Ionicons name="cash-outline" size={18} color={colors.primary} />
