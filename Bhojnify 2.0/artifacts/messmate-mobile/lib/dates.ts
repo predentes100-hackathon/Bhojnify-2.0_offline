@@ -20,6 +20,11 @@ export function daysBetween(dateA: string, dateB: string): number {
   return Math.round((b - a) / 86400000);
 }
 
+/** Returns whole calendar days from referenceDate until expiryDate. */
+export function daysLeft(expiryDate: string, referenceDate: string = todayISO()): number {
+  return daysBetween(referenceDate, expiryDate);
+}
+
 export function isValidISODate(dateStr: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
   const d = new Date(`${dateStr}T12:00:00`);

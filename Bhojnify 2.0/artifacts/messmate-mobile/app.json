@@ -17,7 +17,13 @@
       "supportsTablet": false
     },
     "android": {
-      "package": "com.anonymous.messmatemobile"
+      "package": "com.anonymous.messmatemobile",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES"
+      ]
     },
     "web": {
       "favicon": "./assets/images/icon.png"
@@ -27,6 +33,13 @@
         "expo-router",
         {
           "origin": "https://replit.com/"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you set customer profile pictures.",
+          "cameraPermission": "The app accesses your camera to take customer profile pictures."
         }
       ],
       "expo-font",

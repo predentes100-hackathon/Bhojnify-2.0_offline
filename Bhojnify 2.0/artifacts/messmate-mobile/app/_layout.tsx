@@ -27,6 +27,9 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerBackTitle: t('goHome') }}>
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="customers" options={{ headerShown: false }} />
+      <Stack.Screen name="whatsapp-queue" options={{ headerShown: false }} />
+      <Stack.Screen name="whatsapp-settings" options={{ headerShown: false }} />
     </Stack>
   );
 }

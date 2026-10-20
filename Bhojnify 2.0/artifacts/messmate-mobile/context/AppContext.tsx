@@ -1,4 +1,5 @@
 import { todayISO, daysBetween, addDaysISO } from '@/lib/dates';
+import { DEFAULT_TEMPLATES, MessageTemplates, MessageType } from '@/lib/whatsapp';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useContext, useEffect, useMemo, useState, useRef } from 'react';
 import { Language } from '@/lib/i18n';
@@ -35,6 +36,11 @@ export interface Customer {
   paymentStatus: CustomerPaymentStatus;
   phone: string;
   imageUri?: string;
+  subscriptionId?: string;
+  subscriptionStatus?: 'active' | 'paused' | 'cancelled';
+  amount?: number;
+  mealsLeft?: number;
+  lastRenewedAt?: string;
 }
 
 export const MESS_PLANS = [
@@ -104,6 +110,22 @@ export interface Reminder {
   createdAt: string;
 }
 
+export interface MessSettings {
+  upiId: string;
+  breakfastTime: string;
+  lunchTime: string;
+  dinnerTime: string;
+  messPhone: string;
+}
+
+export interface WhatsAppMessageLog {
+  id: string;
+  studentId: string;
+  subscriptionId?: string;
+  type: MessageType;
+  openedAt: string;
+}
+
 export interface OwnerProfile {
   name: string;
   messName: string;
@@ -126,6 +148,9 @@ interface MessState {
   expiresOn: string;
   profile: OwnerProfile;
   policies: OwnerPolicies;
+  messSettings: MessSettings;
+  messageTemplates: MessageTemplates;
+  whatsappMessageLogs: WhatsAppMessageLog[];
   attendance: AttendanceRecord[];
   customers: Customer[];
   leaves: LeaveRequest[];
@@ -141,7 +166,12 @@ interface MessState {
 interface MessActions {
   setLanguage: (language: Language) => void;
   completeOwnerSetup: (profile: OwnerProfile) => void;
+  updateOwnerProfile: (updates: Partial<OwnerProfile>) => void;
   updatePolicies: (policies: OwnerPolicies) => void;
+  updateMessSettings: (settings: MessSettings) => void;
+  updateMessageTemplate: (type: MessageType, value: string) => void;
+  resetMessageTemplates: () => void;
+  logWhatsAppOpen: (studentId: string, subscriptionId: string | undefined, type: MessageType) => void;
   markAttendance: (meal: Meal, verified: boolean, method: string) => void;
   addCustomer: (customer: Omit<Customer, 'id'>) => string;
   markCustomerPaid: (id: string, amount: number) => void;
@@ -151,6 +181,7 @@ interface MessActions {
   deleteLeave: (id: string) => void;
   completeLeave: (leaveId: string, returnDate: string) => void;
   updateCustomer: (id: string, updates: Partial<Omit<Customer, 'id'>>) => void;
+  deleteCustomer: (id: string) => void;
   addFeedback: (dish: string, rating: number, note: string) => void;
   addInventory: (item: Omit<InventoryItem, 'id'>) => void;
   removeInventory: (id: string) => void;
@@ -175,6 +206,9 @@ const initialState: MessState = {
   expiresOn: '2026-09-18',
   profile: { name: '', messName: '', phone: '', location: '', email: '' },
   policies: { rules: '', privacy: '' },
+  messSettings: { upiId: '', breakfastTime: '', lunchTime: '', dinnerTime: '', messPhone: '' },
+  messageTemplates: { ...DEFAULT_TEMPLATES },
+  whatsappMessageLogs: [],
   attendance: [
     { id: 'a1', date: today, meal: 'Breakfast', time: '08:04 AM', verified: true, method: 'Biometric + GPS' },
     { id: 'a2', date: today, meal: 'Lunch', time: '01:12 PM', verified: true, method: 'Biometric + GPS' },
@@ -272,9 +306,12 @@ export function MessProvider({ children }: { children: ReactNode }) {
             language: parsed.language === 'mr' ? 'mr' : 'en',
             profile: { ...initialState.profile, ...(parsed.profile ?? {}) },
             policies: { ...initialState.policies, ...(parsed.policies ?? {}) },
+            messSettings: { ...initialState.messSettings, ...(parsed.messSettings ?? {}) },
+            messageTemplates: { ...initialState.messageTemplates, ...(parsed.messageTemplates ?? {}) },
+            whatsappMessageLogs: Array.isArray(parsed.whatsappMessageLogs) ? parsed.whatsappMessageLogs : [],
             onboardingComplete: parsed.onboardingComplete === true,
             role: 'owner',
-  hydrated: false,
+            hydrated: false,
           });
         }
       })
@@ -282,7 +319,7 @@ export function MessProvider({ children }: { children: ReactNode }) {
       .finally(() => setHydrated(true));
   }, []);
 
-const saveTimeout = useRef<NodeJS.Timeout | null>(null);
+const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -305,7 +342,21 @@ const saveTimeout = useRef<NodeJS.Timeout | null>(null);
   const actions = useMemo<MessActions>(() => ({
     setLanguage: (language) => setState((prev) => ({ ...prev, language })),
     completeOwnerSetup: (profile) => setState((prev) => ({ ...prev, profile, onboardingComplete: true, role: 'owner' })),
+    updateOwnerProfile: (updates) => setState((prev) => ({ ...prev, profile: { ...prev.profile, ...updates } })),
     updatePolicies: (policies) => setState((prev) => ({ ...prev, policies })),
+    updateMessSettings: (settings) => setState((prev) => ({ ...prev, messSettings: settings })),
+    updateMessageTemplate: (type, value) => setState((prev) => ({
+      ...prev,
+      messageTemplates: { ...prev.messageTemplates, [type]: value },
+    })),
+    resetMessageTemplates: () => setState((prev) => ({ ...prev, messageTemplates: { ...DEFAULT_TEMPLATES } })),
+    logWhatsAppOpen: (studentId, subscriptionId, type) => setState((prev) => ({
+      ...prev,
+      whatsappMessageLogs: [
+        { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, studentId, subscriptionId, type, openedAt: new Date().toISOString() },
+        ...prev.whatsappMessageLogs,
+      ],
+    })),
     markAttendance: (meal, verified, method) => setState((prev) => ({
       ...prev,
       credits: Math.max(0, prev.credits - 1),
@@ -329,6 +380,7 @@ const saveTimeout = useRef<NodeJS.Timeout | null>(null);
     updateLeave: (requestId, updates) => setState((prev) => ({ ...prev, leaves: prev.leaves.map((leave) => leave.id === requestId ? { ...leave, ...updates } : leave) })),
     deleteLeave: (requestId) => setState((prev) => ({ ...prev, leaves: prev.leaves.filter((leave) => leave.id !== requestId) })),
     updateCustomer: (customerId, updates) => setState((prev) => ({ ...prev, customers: prev.customers.map((customer) => customer.id === customerId ? { ...customer, ...updates } : customer) })),
+    deleteCustomer: (customerId) => setState((prev) => ({ ...prev, customers: prev.customers.filter((customer) => customer.id !== customerId) })),
     completeLeave: (requestId, returnDate) => setState((prev) => {
       const leave = prev.leaves.find((l) => l.id === requestId);
       if (!leave || !leave.customerId) return prev;
@@ -407,7 +459,7 @@ export function getExpiryInfo(expiryDate: string): ExpiryInfo {
   if (daysRemaining === 0) {
     return { daysRemaining: 0, status: 'today', isExpired: false, isExpiringSoon: true, isExpiringToday: true };
   }
-  if (daysRemaining <= 3) {
+  if (daysRemaining <= 5) {
     return { daysRemaining, status: 'soon', isExpired: false, isExpiringSoon: true, isExpiringToday: false };
   }
   return { daysRemaining, status: 'active', isExpired: false, isExpiringSoon: false, isExpiringToday: false };
