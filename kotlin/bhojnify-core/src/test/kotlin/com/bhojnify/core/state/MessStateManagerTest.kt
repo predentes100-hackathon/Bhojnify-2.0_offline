@@ -2,6 +2,7 @@ package com.bhojnify.core.state
 
 import com.bhojnify.core.model.CustomerPaymentStatus
 import com.bhojnify.core.model.LeaveStatus
+import com.bhojnify.core.model.Meal
 import com.bhojnify.core.model.MessState
 import com.bhojnify.core.repository.MessRepository
 import com.bhojnify.core.repository.InMemoryMessRepository
@@ -11,6 +12,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -62,6 +64,52 @@ class MessStateManagerTest {
         val updatedCustomer = classUnderTest.state.value.customers.first()
         // Plan should have been extended by 5 days: 2026-10-01 + 5 = 2026-10-06
         assertEquals("2026-10-06", updatedCustomer.expiryDate)
+    }
+
+    @Test
+    fun `attendance is linked to customer without consuming global credits`() {
+        val initialCredits = classUnderTest.state.value.credits
+
+        classUnderTest.markAttendance(Meal.LUNCH, customerId = "student-1")
+
+        val record = classUnderTest.state.value.attendance.first()
+        assertEquals("student-1", record.customerId)
+        assertEquals("Manual", record.method)
+        assertEquals(initialCredits, classUnderTest.state.value.credits)
+    }
+
+    @Test
+    fun `payment can be linked to a customer`() {
+        classUnderTest.addPayment(1250.0, "UPI", "Monthly fee", customerId = "student-1")
+
+        val payment = classUnderTest.state.value.payments.first()
+        assertEquals(1250.0, payment.amount)
+        assertEquals("student-1", payment.customerId)
+    }
+
+    @Test
+    fun `renewal records a linked payment when amount is provided`() {
+        classUnderTest.addCustomer(
+            name = "John Doe",
+            plan = "Monthly Veg",
+            joiningDate = "2026-09-01",
+            expiryDate = "2026-10-01",
+            phone = "1234567890"
+        )
+        val customerId = classUnderTest.state.value.customers.first().id
+
+        classUnderTest.renewCustomerPlan(customerId, amount = 1500.0)
+
+        val payment = classUnderTest.state.value.payments.first()
+        assertEquals(1500.0, payment.amount)
+        assertEquals(customerId, payment.customerId)
+    }
+
+    @Test
+    fun `payment amount must be positive`() {
+        assertFailsWith<IllegalArgumentException> {
+            classUnderTest.addPayment(0.0, "UPI", "Invalid")
+        }
     }
 
     @Test

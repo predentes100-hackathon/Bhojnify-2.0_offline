@@ -219,6 +219,18 @@ object I18n {
         "monthlyUnlimited" to "Monthly (Lunch + Dinner)",
         "needsAttention" to "Needs your attention",
         "nextUp" to "Next up",
+        "newCustomer" to "+ Add Customer",
+        "addNewCustomer" to "Add New Customer",
+        "searchCustomers" to "Search by name, phone, or plan...",
+        "customerDetails" to "Customer Details",
+        "callCustomer" to "Call",
+        "whatsappCustomer" to "WhatsApp",
+        "noSearchResults" to "No customers match your search",
+        "noSearchResultsDetail" to "Try searching with a different name, phone, or plan.",
+        "clearSearch" to "Clear Search",
+        "deleteCustomer" to "Delete Customer",
+        "deleteCustomerConfirm" to "Are you sure you want to delete this customer?",
+        "subscriptionDetails" to "Subscription Details",
         "noActiveReminders" to "No active reminders. Add one below when stock needs a follow-up.",
         "noCustomers" to "No customers have been added yet.",
         "noCustomersDetail" to "Add a customer to track their plan and use them in the leave log.",
@@ -1317,7 +1329,7 @@ object I18n {
         "UPI" to "यूपीआय",
         "Paid" to "भरलेले",
         "Unpaid" to "थकीत",
-        "Biometric + GPS" to "बायोमेट्रिक + GPS"
+        "Manual" to "मॅन्युअल"
     )
 
     fun translate(

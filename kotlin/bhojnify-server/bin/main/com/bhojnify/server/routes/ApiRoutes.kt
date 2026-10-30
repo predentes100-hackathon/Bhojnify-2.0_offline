@@ -56,7 +56,8 @@ data class CreatePaymentRequest(
     val amount: Double,
     val method: String = "UPI",
     val note: String = "",
-    val date: String? = null
+    val date: String? = null,
+    val customerId: String? = null
 )
 
 @Serializable
@@ -279,7 +280,8 @@ fun Route.bhojnifyApiRoutes(repository: MessRepository) {
                     date = req.date ?: DateUtils.todayString(),
                     amount = req.amount,
                     method = req.method.trim(),
-                    note = req.note.trim()
+                    note = req.note.trim(),
+                    customerId = req.customerId?.trim()?.takeIf { it.isNotEmpty() }
                 )
                 repository.updateState { it.copy(payments = listOf(payment) + it.payments) }
                 call.respond(HttpStatusCode.Created, payment)

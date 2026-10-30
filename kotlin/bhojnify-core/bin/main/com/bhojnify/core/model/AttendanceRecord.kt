@@ -8,6 +8,7 @@ data class AttendanceRecord(
     val date: String,
     val meal: Meal,
     val time: String,
-    val verified: Boolean = true,
-    val method: String = "Biometric + GPS"
+    val customerId: String? = null,
+    val verified: Boolean = false,
+    val method: String = "Manual"
 )

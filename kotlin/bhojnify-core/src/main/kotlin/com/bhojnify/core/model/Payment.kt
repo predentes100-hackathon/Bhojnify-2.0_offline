@@ -8,5 +8,6 @@ data class Payment(
     val date: String,
     val amount: Double,
     val method: String = "UPI",
-    val note: String = ""
+    val note: String = "",
+    val customerId: String? = null
 )

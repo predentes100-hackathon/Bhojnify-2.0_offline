@@ -334,7 +334,7 @@ export default function CustomersScreen() {
   // Search & Filter computation
   const filteredCustomers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return customers.filter((customer) => {
+    const result = customers.filter((customer) => {
       // 1. Search query match
       if (q) {
         const matchName = customer.name.toLowerCase().includes(q);
@@ -351,6 +351,13 @@ export default function CustomersScreen() {
       if (activeFilter === 'unpaid') return customer.paymentStatus === 'Unpaid';
 
       return true;
+    });
+
+    // If viewing the expiring tab or generally sorting, sort by closest expiry first (fewest days remaining ascending)
+    return result.sort((a, b) => {
+      const aExp = getExpiryInfo(a.expiryDate);
+      const bExp = getExpiryInfo(b.expiryDate);
+      return aExp.daysRemaining - bExp.daysRemaining;
     });
   }, [customers, searchQuery, activeFilter]);
 

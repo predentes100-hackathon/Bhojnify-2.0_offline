@@ -43,21 +43,24 @@ class MessStateManager(
         }
     }
 
-    fun markAttendance(meal: Meal, verified: Boolean = true, method: String = "Biometric + GPS") {
+    fun markAttendance(
+        meal: Meal,
+        verified: Boolean = false,
+        method: String = "Manual",
+        customerId: String? = null
+    ) {
         scope.launch {
             val record = AttendanceRecord(
                 id = generateId(),
                 date = DateUtils.todayString(),
                 meal = meal,
                 time = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a")),
+                customerId = customerId,
                 verified = verified,
                 method = method
             )
             repository.updateState {
-                it.copy(
-                    credits = maxOf(0, it.credits - 1),
-                    attendance = listOf(record) + it.attendance
-                )
+                it.copy(attendance = listOf(record) + it.attendance)
             }
         }
     }
@@ -88,13 +91,37 @@ class MessStateManager(
         }
     }
 
-    fun markCustomerPaid(customerId: String) {
+    fun markCustomerPaid(customerId: String, amount: Double? = null) {
+        require(amount == null || amount > 0.0) { "Payment amount must be greater than zero" }
         scope.launch {
             repository.updateState { current ->
+                val customer = current.customers.find { it.id == customerId }
+                    ?: return@updateState current
+                val payment = amount?.let {
+                    Payment(
+                        id = generateId(),
+                        date = DateUtils.todayString(),
+                        amount = it,
+                        method = "Cash",
+                        note = "Marked as paid: ${customer.name}",
+                        customerId = customerId
+                    )
+                }
                 current.copy(
                     customers = current.customers.map {
                         if (it.id == customerId) it.copy(paymentStatus = CustomerPaymentStatus.PAID) else it
-                    }
+                    },
+                    payments = payment?.let { listOf(it) + current.payments } ?: current.payments
+                )
+            }
+        }
+    }
+
+    fun deleteCustomer(customerId: String) {
+        scope.launch {
+            repository.updateState { current ->
+                current.copy(
+                    customers = current.customers.filter { it.id != customerId }
                 )
             }
         }
@@ -112,11 +139,25 @@ class MessStateManager(
         }
     }
 
-    fun renewCustomerPlan(customerId: String, durationDays: Long = 30) {
+    fun renewCustomerPlan(customerId: String, durationDays: Long = 30, amount: Double? = null) {
+        require(durationDays > 0) { "Renewal duration must be greater than zero" }
+        require(amount == null || amount > 0.0) { "Payment amount must be greater than zero" }
         scope.launch {
             val today = DateUtils.todayString()
             val newExpiry = DateUtils.addDays(today, durationDays)
             repository.updateState { current ->
+                val customer = current.customers.find { it.id == customerId }
+                    ?: return@updateState current
+                val payment = amount?.let {
+                    Payment(
+                        id = generateId(),
+                        date = today,
+                        amount = it,
+                        method = "Cash",
+                        note = "Plan renewal: ${customer.name}",
+                        customerId = customerId
+                    )
+                }
                 current.copy(
                     customers = current.customers.map {
                         if (it.id == customerId) {
@@ -126,7 +167,8 @@ class MessStateManager(
                                 paymentStatus = CustomerPaymentStatus.PAID
                             )
                         } else it
-                    }
+                    },
+                    payments = payment?.let { listOf(it) + current.payments } ?: current.payments
                 )
             }
         }
@@ -300,14 +342,16 @@ class MessStateManager(
         }
     }
 
-    fun addPayment(amount: Double, method: String, note: String) {
+    fun addPayment(amount: Double, method: String, note: String, customerId: String? = null) {
+        require(amount > 0.0) { "Payment amount must be greater than zero" }
         scope.launch {
             val payment = Payment(
                 id = generateId(),
                 date = DateUtils.todayString(),
                 amount = amount,
                 method = method,
-                note = note
+                note = note,
+                customerId = customerId
             )
             repository.updateState {
                 it.copy(payments = listOf(payment) + it.payments)

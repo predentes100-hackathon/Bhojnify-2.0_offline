@@ -50,8 +50,12 @@ class MessViewModel(application: Application) : AndroidViewModel(application) {
     fun setLanguage(language: Language) = stateManager.setLanguage(language)
     fun completeOwnerSetup(profile: OwnerProfile) = stateManager.completeOwnerSetup(profile)
     fun updatePolicies(policies: OwnerPolicies) = stateManager.updatePolicies(policies)
-    fun markAttendance(meal: Meal, verified: Boolean = true, method: String = "Biometric + GPS") =
-        stateManager.markAttendance(meal, verified, method)
+    fun markAttendance(
+        meal: Meal,
+        verified: Boolean = false,
+        method: String = "Manual",
+        customerId: String? = null
+    ) = stateManager.markAttendance(meal, verified, method, customerId)
 
     fun addCustomer(
         name: String,
@@ -63,8 +67,9 @@ class MessViewModel(application: Application) : AndroidViewModel(application) {
         imageUri: String? = null
     ) = stateManager.addCustomer(name, plan, joiningDate, expiryDate, phone, paymentStatus, imageUri)
 
-    fun markCustomerPaid(id: String) = stateManager.markCustomerPaid(id)
-    fun renewCustomerPlan(id: String) = stateManager.renewCustomerPlan(id)
+    fun markCustomerPaid(id: String, amount: Double? = null) = stateManager.markCustomerPaid(id, amount)
+    fun renewCustomerPlan(id: String, amount: Double? = null) = stateManager.renewCustomerPlan(id, amount = amount)
+    fun deleteCustomer(id: String) = stateManager.deleteCustomer(id)
 
     fun addLeave(customerId: String, from: String, to: String?, reason: String) =
         stateManager.addLeave(customerId, from, to, reason)
@@ -93,8 +98,8 @@ class MessViewModel(application: Application) : AndroidViewModel(application) {
     fun addExpense(category: String, amount: Double, note: String) =
         stateManager.addExpense(category, amount, note)
 
-    fun addPayment(amount: Double, method: String, note: String) =
-        stateManager.addPayment(amount, method, note)
+    fun addPayment(amount: Double, method: String, note: String, customerId: String? = null) =
+        stateManager.addPayment(amount, method, note, customerId)
 
     fun addReminder(title: String, daysFromNow: Long, detail: String = "Inventory follow-up") =
         stateManager.addReminder(title, daysFromNow, detail)

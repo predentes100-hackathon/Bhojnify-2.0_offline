@@ -112,68 +112,6 @@ fun ReportScreen(navController: NavController, viewModel: MessViewModel) {
             }
         }
 
-        SectionHeading(title = viewModel.t("serviceHealth"))
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(19.dp))
-                .border(1.dp, colors.border, RoundedCornerShape(19.dp))
-                .background(colors.card)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(9.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = viewModel.t("mealsServed"), color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                Text(text = "${summary.mealsServedCount}", color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            }
-            LinearProgressIndicator(
-                progress = { 0.78f },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(99.dp)),
-                color = colors.primary,
-                trackColor = colors.muted,
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = viewModel.t("stockValueEstimate"), color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                Text(text = "₹${"%,.0f".format(summary.stockValueEstimate)}", color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            }
-            LinearProgressIndicator(
-                progress = { 0.54f },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(99.dp)),
-                color = colors.accent,
-                trackColor = colors.muted,
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = viewModel.t("membersRenewed"), color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                Text(text = "92%", color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            }
-            LinearProgressIndicator(
-                progress = { 0.92f },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(99.dp)),
-                color = colors.primary,
-                trackColor = colors.muted,
-            )
-        }
-
         PrimaryButton(label = viewModel.t("manageExpenses"), icon = Icons.Default.Edit, secondary = true, onClick = { navController.navigate(Routes.EXPENSES) })
     }
 }
