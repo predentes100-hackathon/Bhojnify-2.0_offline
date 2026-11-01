@@ -47,6 +47,8 @@ fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
 
     var rules by remember(policies.rules) { mutableStateOf(policies.rules) }
     var privacy by remember(policies.privacy) { mutableStateOf(policies.privacy) }
+    var maxPlanValidity by remember(policies.maxPlanValidityDays) { mutableStateOf(policies.maxPlanValidityDays.toString()) }
+    var maxLeaveDays by remember(policies.maxLeaveDays) { mutableStateOf(policies.maxLeaveDays.toString()) }
 
     val initials = if (profile.name.isNotEmpty()) {
         profile.name.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase()
@@ -302,6 +304,40 @@ fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
                     )
                 }
             }
+        }
+
+        SectionHeading(title = "Plan and leave limits")
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(19.dp))
+                .border(1.dp, colors.border, RoundedCornerShape(19.dp))
+                .background(colors.card)
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text("Maximum plan validity and leave allowance", color = colors.mutedForeground, fontSize = 12.sp)
+            OutlinedTextField(
+                value = maxPlanValidity,
+                onValueChange = {
+                    maxPlanValidity = it
+                    it.toIntOrNull()?.takeIf { value -> value > 0 }?.let { value -> viewModel.updatePolicies(policies.copy(maxPlanValidityDays = value)) }
+                },
+                label = { Text("Maximum plan validity (days)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = maxLeaveDays,
+                onValueChange = {
+                    maxLeaveDays = it
+                    it.toIntOrNull()?.takeIf { value -> value >= 0 }?.let { value -> viewModel.updatePolicies(policies.copy(maxLeaveDays = value)) }
+                },
+                label = { Text("Maximum leave (days)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            Text("Saved locally. Defaults: 40 plan days and 10 leave days.", color = colors.mutedForeground, fontSize = 11.sp)
         }
 
         Text(

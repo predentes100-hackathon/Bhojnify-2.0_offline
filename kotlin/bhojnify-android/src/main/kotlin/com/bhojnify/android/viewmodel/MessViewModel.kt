@@ -64,8 +64,12 @@ class MessViewModel(application: Application) : AndroidViewModel(application) {
         expiryDate: String,
         phone: String,
         paymentStatus: CustomerPaymentStatus = CustomerPaymentStatus.PAID,
-        imageUri: String? = null
-    ) = stateManager.addCustomer(name, plan, joiningDate, expiryDate, phone, paymentStatus, imageUri)
+        imageUri: String? = null,
+        initialAmount: Double? = null
+    ) = stateManager.addCustomer(name, plan, joiningDate, expiryDate, phone, paymentStatus, imageUri, initialAmount)
+
+    fun updateCustomer(id: String, customer: Customer) = stateManager.updateCustomer(id) { customer }
+    fun updateCustomer(id: String, transform: (Customer) -> Customer) = stateManager.updateCustomer(id, transform)
 
     fun markCustomerPaid(id: String, amount: Double? = null) = stateManager.markCustomerPaid(id, amount)
     fun renewCustomerPlan(id: String, amount: Double? = null) = stateManager.renewCustomerPlan(id, amount = amount)

@@ -66,10 +66,21 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
     var expiryDate by remember { mutableStateOf(DateUtils.addDays(todayStr, 30)) }
     var phone by remember { mutableStateOf("") }
     var paymentStatus by remember { mutableStateOf(CustomerPaymentStatus.PAID) }
+    var initialAmount by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
     // Customer Detail Dialog State
     var selectedCustomerForDetails by remember { mutableStateOf<Customer?>(null) }
+    // Edit Customer Dialog State
+    var customerToEdit by remember { mutableStateOf<Customer?>(null) }
+    var editName by remember { mutableStateOf("") }
+    var editPhone by remember { mutableStateOf("") }
+    var editPlan by remember { mutableStateOf("") }
+    var editJoiningDate by remember { mutableStateOf("") }
+    var editExpiryDate by remember { mutableStateOf("") }
+    var editPaymentStatus by remember { mutableStateOf(CustomerPaymentStatus.PAID) }
+    var markPaidAmount by remember { mutableStateOf("") }
+    var showMarkPaidDialog by remember { mutableStateOf<Customer?>(null) }
 
     // Image Picker Launcher
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -104,7 +115,8 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                 expiryDate = expiryDate.trim(),
                 phone = phone.trim(),
                 paymentStatus = paymentStatus,
-                imageUri = selectedImageUri?.toString()
+                imageUri = selectedImageUri?.toString(),
+                initialAmount = initialAmount.toDoubleOrNull()
             )
             name = ""
             selectedPlan = plans.first()
@@ -113,6 +125,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
             expiryDate = DateUtils.addDays(todayStr, 30)
             phone = ""
             paymentStatus = CustomerPaymentStatus.PAID
+            initialAmount = ""
             selectedImageUri = null
             showAddDialog = false
             Toast.makeText(context, "Customer registered successfully!", Toast.LENGTH_SHORT).show()
@@ -144,6 +157,12 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
         }
 
         matchesSearch && matchesTab
+    }.let { matching ->
+        if (activeFilter == CustomerFilter.EXPIRING) {
+            matching.sortedWith(compareBy<Customer> { DateUtils.getExpiryInfo(it.expiryDate, todayStr).daysRemaining }.thenBy { it.name.lowercase() })
+        } else {
+            matching.sortedBy { it.name.lowercase() }
+        }
     }
 
     Column(
@@ -694,6 +713,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                     FormField(label = viewModel.t("joiningDate"), value = joiningDate, onValueChange = { joiningDate = it }, placeholder = "YYYY-MM-DD")
                     FormField(label = viewModel.t("expiryDate"), value = expiryDate, onValueChange = { expiryDate = it }, placeholder = "YYYY-MM-DD")
                     FormField(label = viewModel.t("customerPhone"), value = phone, onValueChange = { phone = it }, placeholder = viewModel.t("enterCustomerPhone"), keyboardType = KeyboardType.Phone)
+                    FormField(label = "Onboarding payment (₹)", value = initialAmount, onValueChange = { initialAmount = it }, placeholder = "Optional amount", keyboardType = KeyboardType.Number)
 
                     Text(text = viewModel.t("paymentStatus"), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -893,6 +913,43 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
                             onClick = {
+                                editName = customer.name
+                                editPhone = customer.phone
+                                editPlan = customer.plan
+                                editJoiningDate = customer.joiningDate
+                                editExpiryDate = customer.expiryDate
+                                editPaymentStatus = customer.paymentStatus
+                                customerToEdit = customer
+                                selectedCustomerForDetails = null
+                            },
+                            modifier = Modifier.fillMaxWidth().height(44.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = colors.secondary, contentColor = colors.foreground),
+                            shape = RoundedCornerShape(13.dp)
+                        ) {
+                            Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = "Edit info", fontWeight = FontWeight.Bold)
+                        }
+
+                        if (customer.paymentStatus == CustomerPaymentStatus.UNPAID) {
+                            Button(
+                                onClick = {
+                                    markPaidAmount = ""
+                                    showMarkPaidDialog = customer
+                                    selectedCustomerForDetails = null
+                                },
+                                modifier = Modifier.fillMaxWidth().height(44.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = colors.primaryForeground),
+                                shape = RoundedCornerShape(13.dp)
+                            ) {
+                                Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(text = "Mark as paid", fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        Button(
+                            onClick = {
                                 viewModel.renewCustomerPlan(customer.id)
                                 Toast.makeText(context, "Plan renewed successfully!", Toast.LENGTH_SHORT).show()
                                 selectedCustomerForDetails = null
@@ -919,6 +976,81 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                             Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(text = viewModel.t("deleteCustomer"), fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // EDIT CUSTOMER DIALOG
+    customerToEdit?.let { original ->
+        Dialog(onDismissRequest = { customerToEdit = null }) {
+            Surface(shape = RoundedCornerShape(22.dp), color = colors.card, modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
+                Column(modifier = Modifier.padding(20.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Edit customer", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
+                        IconButton(onClick = { customerToEdit = null }) { Icon(Icons.Default.Close, "Close", tint = colors.mutedForeground) }
+                    }
+                    FormField(label = "Name", value = editName, onValueChange = { editName = it }, placeholder = "Customer name")
+                    FormField(label = "Phone", value = editPhone, onValueChange = { editPhone = it }, placeholder = "Phone number", keyboardType = KeyboardType.Phone)
+                    FormField(label = "Plan", value = editPlan, onValueChange = { editPlan = it }, placeholder = "Plan name")
+                    FormField(label = "Joining date (YYYY-MM-DD)", value = editJoiningDate, onValueChange = { editJoiningDate = it }, placeholder = "YYYY-MM-DD")
+                    FormField(label = "Expiry date (YYYY-MM-DD)", value = editExpiryDate, onValueChange = { editExpiryDate = it }, placeholder = "YYYY-MM-DD")
+                    Text("Payment status", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CustomerPaymentStatus.values().forEach { status ->
+                            val isSel = editPaymentStatus == status
+                            Box(modifier = Modifier.weight(1f).height(44.dp).border(1.dp, if (isSel) colors.primary else colors.border, RoundedCornerShape(12.dp)).background(if (isSel) colors.secondary else colors.background).clickable { editPaymentStatus = status }, contentAlignment = Alignment.Center) {
+                                Text(text = viewModel.localized(status.displayName), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
+                            }
+                        }
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(onClick = { customerToEdit = null }, modifier = Modifier.weight(1f).height(46.dp), colors = ButtonDefaults.buttonColors(containerColor = colors.secondary, contentColor = colors.foreground), shape = RoundedCornerShape(13.dp)) { Text("Cancel", fontWeight = FontWeight.Bold) }
+                        Button(
+                            onClick = {
+                                if (editName.isNotBlank() && editPhone.isNotBlank()) {
+                                    viewModel.updateCustomer(original.id) { it.copy(name = editName.trim(), phone = editPhone.trim(), plan = editPlan.trim(), joiningDate = editJoiningDate.trim(), expiryDate = editExpiryDate.trim(), paymentStatus = editPaymentStatus) }
+                                    Toast.makeText(context, "Customer updated", Toast.LENGTH_SHORT).show()
+                                    customerToEdit = null
+                                } else {
+                                    Toast.makeText(context, "Name and phone are required", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            modifier = Modifier.weight(2f).height(46.dp), colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = colors.primaryForeground), shape = RoundedCornerShape(13.dp)
+                        ) {
+                            Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Save changes", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK AS PAID DIALOG
+    showMarkPaidDialog?.let { customer ->
+        Dialog(onDismissRequest = { showMarkPaidDialog = null }) {
+            Surface(shape = RoundedCornerShape(22.dp), color = colors.card, modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
+                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Mark as paid — ${customer.name}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
+                    FormField(label = "Amount received (₹)", value = markPaidAmount, onValueChange = { markPaidAmount = it }, placeholder = "Enter amount", keyboardType = KeyboardType.Number)
+                    Text("Leave blank to just mark paid without recording a payment.", color = colors.mutedForeground, fontSize = 12.sp)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(onClick = { showMarkPaidDialog = null }, modifier = Modifier.weight(1f).height(46.dp), colors = ButtonDefaults.buttonColors(containerColor = colors.secondary, contentColor = colors.foreground), shape = RoundedCornerShape(13.dp)) { Text("Cancel", fontWeight = FontWeight.Bold) }
+                        Button(
+                            onClick = {
+                                viewModel.markCustomerPaid(customer.id, markPaidAmount.toDoubleOrNull())
+                                Toast.makeText(context, "Marked as paid", Toast.LENGTH_SHORT).show()
+                                showMarkPaidDialog = null
+                            },
+                            modifier = Modifier.weight(2f).height(46.dp), colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = colors.primaryForeground), shape = RoundedCornerShape(13.dp)
+                        ) {
+                            Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Confirm paid", fontWeight = FontWeight.Bold)
                         }
                     }
                 }

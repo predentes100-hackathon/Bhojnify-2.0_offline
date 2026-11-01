@@ -85,7 +85,8 @@ class MessStateManager(
                 expiryDate = expiryDate,
                 paymentStatus = paymentStatus,
                 phone = phone,
-                imageUri = imageUri
+                imageUri = imageUri,
+                amount = initialAmount
             )
             val payment = if (paymentStatus == CustomerPaymentStatus.PAID && initialAmount != null && initialAmount > 0.0) {
                 Payment(

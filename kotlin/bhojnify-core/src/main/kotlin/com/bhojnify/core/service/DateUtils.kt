@@ -83,7 +83,7 @@ object DateUtils {
                 isExpiringSoon = true,
                 isExpiringToday = true
             )
-            daysRemaining <= 3L -> ExpiryInfo(
+            daysRemaining <= 5L -> ExpiryInfo(
                 daysRemaining = daysRemaining,
                 status = ExpiryStatus.SOON,
                 isExpired = false,

@@ -1,5 +1,7 @@
 package com.bhojnify.android.screens
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -96,6 +98,36 @@ fun MenuScreen(navController: NavController, viewModel: MessViewModel) {
         }
 
         SectionHeading(title = viewModel.t("publishedMenu"))
+
+        // Export CSV button
+        if (menus.isNotEmpty()) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(colors.secondary)
+                        .clickable {
+                            val sb = StringBuilder()
+                            sb.appendLine("Date,Meal,Dish,Note")
+                            menus.sortedBy { it.day }.forEach { item ->
+                                sb.appendLine("${item.day},${item.meal.displayName},${item.dish},${item.note}")
+                            }
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/csv"
+                                putExtra(Intent.EXTRA_SUBJECT, "Bhojnify menu export")
+                                putExtra(Intent.EXTRA_TEXT, sb.toString())
+                            }
+                            context.startActivity(Intent.createChooser(intent, "Export menu CSV"))
+                        }
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(Icons.Default.FileDownload, null, tint = colors.primary, modifier = Modifier.size(16.dp))
+                        Text("Export CSV", color = colors.primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
 
         if (groupedMenus.isNotEmpty()) {
             groupedMenus.forEach { (dateKey, items) ->
