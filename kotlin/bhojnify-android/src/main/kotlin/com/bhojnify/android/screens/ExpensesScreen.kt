@@ -242,7 +242,7 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
     var customCategories by remember(persistedCategories) {
         mutableStateOf(persistedCategories.filter { it !in DEFAULT_CATEGORIES })
     }
-    val allCategories by derivedStateOf { DEFAULT_CATEGORIES + customCategories }
+    val allCategories = remember(customCategories) { DEFAULT_CATEGORIES + customCategories }
 
     var selectedCategory by remember { mutableStateOf(DEFAULT_CATEGORIES.first()) }
     var amount by remember { mutableStateOf("") }
