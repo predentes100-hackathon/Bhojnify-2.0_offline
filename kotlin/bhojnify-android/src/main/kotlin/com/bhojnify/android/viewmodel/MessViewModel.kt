@@ -57,6 +57,12 @@ class MessViewModel(application: Application) : AndroidViewModel(application) {
         customerId: String? = null
     ) = stateManager.markAttendance(meal, verified, method, customerId)
 
+    fun markAttendanceBatch(customerIds: List<String>, meal: Meal, method: String = "Manual") =
+        stateManager.markAttendanceBatch(customerIds, meal, method)
+
+    fun unmarkAttendance(customerId: String, meal: Meal) =
+        stateManager.unmarkAttendance(customerId, meal)
+
     fun addCustomer(
         name: String,
         plan: String,

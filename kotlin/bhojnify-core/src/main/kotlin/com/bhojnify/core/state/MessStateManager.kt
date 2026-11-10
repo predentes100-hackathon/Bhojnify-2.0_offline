@@ -50,17 +50,76 @@ class MessStateManager(
         customerId: String? = null
     ) {
         scope.launch {
-            val record = AttendanceRecord(
-                id = generateId(),
-                date = DateUtils.todayString(),
-                meal = meal,
-                time = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a")),
-                customerId = customerId,
-                verified = verified,
-                method = method
-            )
-            repository.updateState {
-                it.copy(attendance = listOf(record) + it.attendance)
+            val today = DateUtils.todayString()
+            val time = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a"))
+            repository.updateState { current ->
+                // Prevent duplicate: same customer + meal + date
+                val alreadyMarked = current.attendance.any {
+                    it.date == today && it.meal == meal && it.customerId == customerId
+                }
+                if (alreadyMarked) return@updateState current
+                val record = AttendanceRecord(
+                    id = generateId(),
+                    date = today,
+                    meal = meal,
+                    time = time,
+                    customerId = customerId,
+                    verified = verified,
+                    method = method
+                )
+                current.copy(attendance = listOf(record) + current.attendance)
+            }
+        }
+    }
+
+    /**
+     * Mark attendance for a batch of customers for a single meal on today's date.
+     * Silently skips any (customerId, meal, date) combination already recorded.
+     */
+    fun markAttendanceBatch(
+        customerIds: List<String>,
+        meal: Meal,
+        method: String = "Manual"
+    ) {
+        scope.launch {
+            val today = DateUtils.todayString()
+            val time = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a"))
+            repository.updateState { current ->
+                val alreadyMarked = current.attendance
+                    .filter { it.date == today && it.meal == meal }
+                    .mapNotNull { it.customerId }
+                    .toSet()
+                val newRecords = customerIds
+                    .filter { it !in alreadyMarked }
+                    .map { cid ->
+                        AttendanceRecord(
+                            id = generateId(),
+                            date = today,
+                            meal = meal,
+                            time = time,
+                            customerId = cid,
+                            verified = false,
+                            method = method
+                        )
+                    }
+                if (newRecords.isEmpty()) current
+                else current.copy(attendance = newRecords + current.attendance)
+            }
+        }
+    }
+
+    /**
+     * Undo attendance for a specific customer on today's date and given meal.
+     */
+    fun unmarkAttendance(customerId: String, meal: Meal) {
+        scope.launch {
+            val today = DateUtils.todayString()
+            repository.updateState { current ->
+                current.copy(
+                    attendance = current.attendance.filterNot {
+                        it.date == today && it.meal == meal && it.customerId == customerId
+                    }
+                )
             }
         }
     }
@@ -354,7 +413,15 @@ class MessStateManager(
                 note = note
             )
             repository.updateState {
-                it.copy(expenses = listOf(expense) + it.expenses)
+                val categories = if (category.isBlank() || it.expenseCategories.contains(category)) {
+                    it.expenseCategories
+                } else {
+                    it.expenseCategories + category
+                }
+                it.copy(
+                    expenses = listOf(expense) + it.expenses,
+                    expenseCategories = categories
+                )
             }
         }
     }

@@ -77,6 +77,7 @@ fun AppNavigator(viewModel: MessViewModel) {
             composable(Routes.REPORT) { ReportScreen(navController, viewModel) }
             composable(Routes.STAFF) { StaffScreen(navController, viewModel) }
             composable(Routes.FEEDBACK) { FeedbackScreen(navController, viewModel) }
+            composable(Routes.ATTENDANCE) { AttendanceScreen(navController, viewModel) }
         }
     }
 }

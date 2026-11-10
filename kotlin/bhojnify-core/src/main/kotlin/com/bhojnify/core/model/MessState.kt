@@ -20,6 +20,10 @@ data class MessState(
     val menus: List<MenuItem> = emptyList(),
     val staff: List<StaffMember> = emptyList(),
     val expenses: List<Expense> = emptyList(),
+    val expenseCategories: List<String> = listOf(
+        "Inventory", "Grocery", "Gas", "Electricity", "Water",
+        "Maintenance", "Salary", "Rent", "Packaging", "Other"
+    ),
     val feedback: List<Feedback> = emptyList(),
     val reminders: List<Reminder> = emptyList()
 ) {

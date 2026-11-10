@@ -337,15 +337,9 @@ fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-            Text("Saved locally. Defaults: 40 plan days and 10 leave days.", color = colors.mutedForeground, fontSize = 11.sp)
+            Text("Defaults: 40 plan days and 10 leave days.", color = colors.mutedForeground, fontSize = 11.sp)
         }
 
-        Text(
-            text = viewModel.t("policiesSavedLocally"),
-            color = colors.mutedForeground,
-            fontSize = 11.sp,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
 
         SectionHeading(title = viewModel.t("language"))
         Column(

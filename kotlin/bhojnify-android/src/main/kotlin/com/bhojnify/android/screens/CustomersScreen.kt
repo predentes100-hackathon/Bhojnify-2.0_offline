@@ -43,6 +43,7 @@ import com.bhojnify.core.model.MessPlans
 import com.bhojnify.core.service.DateUtils
 
 enum class CustomerFilter { ALL, ACTIVE, EXPIRING, EXPIRED, UNPAID }
+enum class CustomerSortBy { NAME, JOINING_DATE_NEWEST, JOINING_DATE_OLDEST, EXPIRY_DATE_EARLIEST, EXPIRY_DATE_LATEST }
 
 @Composable
 fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
@@ -53,9 +54,11 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
     val customers = state.customers
     val todayStr = DateUtils.todayString()
 
-    // Search & Filter State
+    // Search & Filter & Sort State
     var searchQuery by remember { mutableStateOf("") }
     var activeFilter by remember { mutableStateOf(CustomerFilter.ALL) }
+    var sortBy by remember { mutableStateOf(CustomerSortBy.EXPIRY_DATE_EARLIEST) }
+    var showSortMenu by remember { mutableStateOf(false) }
 
     // Add Customer Dialog State
     var showAddDialog by remember { mutableStateOf(false) }
@@ -158,10 +161,24 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
 
         matchesSearch && matchesTab
     }.let { matching ->
-        if (activeFilter == CustomerFilter.EXPIRING) {
-            matching.sortedWith(compareBy<Customer> { DateUtils.getExpiryInfo(it.expiryDate, todayStr).daysRemaining }.thenBy { it.name.lowercase() })
-        } else {
-            matching.sortedBy { it.name.lowercase() }
+        when (sortBy) {
+            CustomerSortBy.NAME -> matching.sortedBy { it.name.lowercase() }
+            CustomerSortBy.JOINING_DATE_NEWEST -> matching.sortedWith(
+                compareByDescending<Customer> { sortableDateKey(it.joiningDate) }
+                    .thenBy { it.name.lowercase() }
+            )
+            CustomerSortBy.JOINING_DATE_OLDEST -> matching.sortedWith(
+                compareBy<Customer> { sortableDateKey(it.joiningDate) }
+                    .thenBy { it.name.lowercase() }
+            )
+            CustomerSortBy.EXPIRY_DATE_EARLIEST -> matching.sortedWith(
+                compareBy<Customer> { sortableDateKey(it.expiryDate) }
+                    .thenBy { it.name.lowercase() }
+            )
+            CustomerSortBy.EXPIRY_DATE_LATEST -> matching.sortedWith(
+                compareByDescending<Customer> { sortableDateKey(it.expiryDate) }
+                    .thenBy { it.name.lowercase() }
+            )
         }
     }
 
@@ -356,6 +373,49 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
             ),
             singleLine = true
         )
+
+        // Date-wise sorting
+        Box {
+            OutlinedButton(
+                onClick = { showSortMenu = true },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = colors.card,
+                    contentColor = colors.foreground
+                ),
+                border = androidx.compose.foundation.BorderStroke(1.dp, colors.border)
+            ) {
+                Icon(Icons.Default.Sort, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(sortLabel(sortBy), modifier = Modifier.weight(1f))
+                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+            }
+            DropdownMenu(
+                expanded = showSortMenu,
+                onDismissRequest = { showSortMenu = false },
+                modifier = Modifier.background(colors.card)
+            ) {
+                CustomerSortBy.values().forEach { option ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = sortLabel(option),
+                                color = if (sortBy == option) colors.primary else colors.foreground,
+                                fontWeight = if (sortBy == option) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        onClick = {
+                            sortBy = option
+                            showSortMenu = false
+                        },
+                        leadingIcon = if (sortBy == option) {
+                            { Icon(Icons.Default.Check, contentDescription = null, tint = colors.primary) }
+                        } else null
+                    )
+                }
+            }
+        }
 
         // Filter Tabs
         Row(
@@ -1056,5 +1116,19 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                 }
             }
         }
+    }
+}
+
+private fun sortableDateKey(dateStr: String): String {
+    return if (dateStr.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) dateStr else "0000-00-00"
+}
+
+private fun sortLabel(sortBy: CustomerSortBy): String {
+    return when (sortBy) {
+        CustomerSortBy.NAME -> "Sort by Name (A-Z)"
+        CustomerSortBy.JOINING_DATE_NEWEST -> "Joining Date: Newest First"
+        CustomerSortBy.JOINING_DATE_OLDEST -> "Joining Date: Oldest First"
+        CustomerSortBy.EXPIRY_DATE_EARLIEST -> "Expiry Date: Earliest First"
+        CustomerSortBy.EXPIRY_DATE_LATEST -> "Expiry Date: Latest First"
     }
 }

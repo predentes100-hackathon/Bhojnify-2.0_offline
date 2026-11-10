@@ -27,6 +27,7 @@ import com.bhojnify.android.navigation.Routes
 import com.bhojnify.android.theme.BhojnifyTheme
 import com.bhojnify.android.viewmodel.MessViewModel
 import com.bhojnify.core.model.LeaveStatus
+import com.bhojnify.core.service.DateUtils
 
 @Composable
 fun AdminScreen(navController: NavController, viewModel: MessViewModel) {
@@ -46,6 +47,12 @@ fun AdminScreen(navController: NavController, viewModel: MessViewModel) {
     val lowStock = inventory.filter { it.quantity <= it.minimum }
     val revenue = payments.sumOf { it.amount }
     val spend = expenses.sumOf { it.amount }
+    val today = DateUtils.todayString()
+    val activeCustomerCount = customers.count { !DateUtils.getExpiryInfo(it.expiryDate).isExpired }
+    val todayAttendanceCount = attendance.count { it.date == today }
+    val todayAttendanceRate = if (activeCustomerCount > 0) {
+        (todayAttendanceCount * 100) / (activeCustomerCount * 3)
+    } else 0
 
     Column(
         modifier = Modifier
@@ -100,9 +107,11 @@ fun AdminScreen(navController: NavController, viewModel: MessViewModel) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StatCard(
                 label = viewModel.t("attendance").uppercase(),
-                value = "${attendance.size}",
-                detail = viewModel.t("todayRecords"),
-                modifier = Modifier.weight(1f)
+                value = "$todayAttendanceCount",
+                detail = "$todayAttendanceRate% rate today",
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { navController.navigate(Routes.ATTENDANCE) }
             )
             StatCard(
                 label = viewModel.t("pending").uppercase(),
@@ -132,16 +141,22 @@ fun AdminScreen(navController: NavController, viewModel: MessViewModel) {
 
         SectionHeading(title = viewModel.t("manageOperations"))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            IconTile(Icons.Default.CheckCircle, "Attendance", onClick = { navController.navigate(Routes.ATTENDANCE) }, modifier = Modifier.weight(1f))
             IconTile(Icons.Default.Inventory, viewModel.t("inventory"), onClick = { navController.navigate(Routes.INVENTORY) }, modifier = Modifier.weight(1f))
             IconTile(Icons.Default.RestaurantMenu, viewModel.t("menu"), onClick = { navController.navigate(Routes.MENU) }, modifier = Modifier.weight(1f))
             IconTile(Icons.Default.People, viewModel.t("staff"), onClick = { navController.navigate(Routes.STAFF) }, modifier = Modifier.weight(1f))
-            IconTile(Icons.Default.MoneyOff, viewModel.t("expenses"), onClick = { navController.navigate(Routes.EXPENSES) }, modifier = Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             IconTile(Icons.Default.Groups, viewModel.t("customers"), onClick = { navController.navigate(Routes.CUSTOMERS) }, modifier = Modifier.weight(1f))
             IconTile(Icons.Default.BarChart, viewModel.t("reports"), onClick = { navController.navigate(Routes.REPORT) }, modifier = Modifier.weight(1f))
             IconTile(Icons.Default.Payment, viewModel.t("payments"), onClick = { navController.navigate(Routes.PAYMENTS) }, modifier = Modifier.weight(1f))
             IconTile(Icons.Default.DateRange, viewModel.t("leaveLog"), onClick = { navController.navigate(Routes.LEAVE) }, modifier = Modifier.weight(1f))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            IconTile(Icons.Default.ReceiptLong, viewModel.t("expenses"), onClick = { navController.navigate(Routes.EXPENSES) }, modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
         }
 
         SectionHeading(

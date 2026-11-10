@@ -3,8 +3,10 @@ package com.bhojnify.android.screens
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -14,17 +16,211 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.bhojnify.android.components.*
 import com.bhojnify.android.navigation.Routes
 import com.bhojnify.android.theme.BhojnifyTheme
 import com.bhojnify.android.viewmodel.MessViewModel
+import kotlin.math.cos
+import kotlin.math.sin
 
+// ── Default categories ───────────────────────────────────────────────────────
+private val DEFAULT_CATEGORIES = listOf(
+    "Inventory",
+    "Grocery",
+    "Gas",
+    "Electricity",
+    "Water",
+    "Maintenance",
+    "Salary",
+    "Rent",
+    "Packaging",
+    "Other"
+)
+
+// ── Chart palette — 10 distinct hues, colorblind-friendly order ───────────────
+private val SLICE_COLORS = listOf(
+    Color(0xFF4C6EF5), // indigo
+    Color(0xFFF76707), // orange
+    Color(0xFF2F9E44), // green
+    Color(0xFFE03131), // red
+    Color(0xFF0CA678), // teal
+    Color(0xFFAE3EC9), // purple
+    Color(0xFF1971C2), // blue
+    Color(0xFFE67700), // amber
+    Color(0xFF099268), // emerald
+    Color(0xFFC2255C), // pink
+)
+
+private fun colorForIndex(i: Int): Color = SLICE_COLORS[i % SLICE_COLORS.size]
+
+// ── Pie chart drawn entirely with Compose Canvas ─────────────────────────────
+@androidx.compose.runtime.Composable
+private fun ExpensePieChart(
+    slices: List<Pair<String, Double>>,      // label → amount
+    total: Double,
+    modifier: Modifier = Modifier
+) {
+    if (slices.isEmpty() || total == 0.0) return
+
+    val colors = BhojnifyTheme.colors
+    val sweeps = slices.map { (it.second / total * 360f).toFloat() }
+
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+
+        // ── Donut ─────────────────────────────────────────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            val strokeWidth = 52.dp
+
+            androidx.compose.foundation.Canvas(
+                modifier = Modifier
+                    .size(200.dp)
+            ) {
+                val diameter = size.minDimension
+                val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
+                val arcSize = Size(diameter, diameter)
+                val gapSweep = 1.5f          // 1.5° white gap between slices
+
+                var startAngle = -90f
+                sweeps.forEachIndexed { i, sweep ->
+                    // filled arc
+                    drawArc(
+                        color = colorForIndex(i),
+                        startAngle = startAngle + gapSweep / 2f,
+                        sweepAngle = sweep - gapSweep,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = arcSize,
+                        style = Stroke(width = strokeWidth.toPx())
+                    )
+                    startAngle += sweep
+                }
+
+                // surface-color ring to create donut hole
+                drawCircle(
+                    color = Color(0xFF1A1A2E).copy(alpha = 0f), // transparent — donut formed by stroke style
+                    radius = 0f
+                )
+            }
+
+            // Center label: total
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "₹${"%,.0f".format(total)}",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.foreground
+                )
+                Text(
+                    text = "Total",
+                    fontSize = 11.sp,
+                    color = colors.mutedForeground,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
+        // ── Legend (category · color swatch · amount · %) ─────────────────
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(colors.card)
+                .border(1.dp, colors.border, RoundedCornerShape(16.dp))
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text("Breakdown", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
+
+            slices.forEachIndexed { i, (label, amount) ->
+                val pct = if (total > 0) amount / total * 100 else 0.0
+                val barFrac = if (total > 0) (amount / total).toFloat() else 0f
+
+                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // color swatch
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .clip(CircleShape)
+                                .background(colorForIndex(i))
+                        )
+                        // label
+                        Text(
+                            text = label,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = colors.foreground,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        // percentage badge
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(colorForIndex(i).copy(alpha = 0.15f))
+                                .padding(horizontal = 7.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "${"%.1f".format(pct)}%",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = colorForIndex(i)
+                            )
+                        }
+                        // amount
+                        Text(
+                            text = "₹${"%,.0f".format(amount)}",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.foreground
+                        )
+                    }
+
+                    // thin progress bar
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(colors.border)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(barFrac)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(colorForIndex(i))
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── Main screen ───────────────────────────────────────────────────────────────
 @Composable
 fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
     val colors = BhojnifyTheme.colors
@@ -32,18 +228,40 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
     val context = LocalContext.current
 
     val expenses = state.expenses
-    var category by remember { mutableStateOf("Inventory") }
+
+    // Category state — combine defaults with any custom ones already saved
+    val persistedCategories = state.expenseCategories.ifEmpty { DEFAULT_CATEGORIES }
+    var customCategories by remember(persistedCategories) {
+        mutableStateOf(persistedCategories.filter { it !in DEFAULT_CATEGORIES })
+    }
+    val allCategories by derivedStateOf { DEFAULT_CATEGORIES + customCategories }
+
+    var selectedCategory by remember { mutableStateOf(DEFAULT_CATEGORIES.first()) }
     var amount by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
 
+    // Add-custom-category dialog state
+    var showAddCategoryDialog by remember { mutableStateOf(false) }
+    var newCategoryInput by remember { mutableStateOf("") }
+
     val totalSpend = expenses.sumOf { it.amount }
+
+    // Group by category, sorted by total descending for chart
+    val categoryTotals: List<Pair<String, Double>> = remember(expenses) {
+        expenses
+            .groupBy { it.category }
+            .map { (cat, list) -> Pair(cat, list.sumOf { it.amount }) }
+            .sortedByDescending { it.second }
+    }
 
     val add = {
         val a = amount.toDoubleOrNull()
-        if (a == null || note.trim().isEmpty()) {
+        if (a == null || a <= 0) {
+            Toast.makeText(context, "Enter a valid amount", Toast.LENGTH_SHORT).show()
+        } else if (note.trim().isEmpty()) {
             Toast.makeText(context, viewModel.t("expenseRequiredMessage"), Toast.LENGTH_SHORT).show()
         } else {
-            viewModel.addExpense(category.trim(), a, note.trim())
+            viewModel.addExpense(selectedCategory.trim(), a, note.trim())
             amount = ""
             note = ""
             Toast.makeText(context, "Expense saved!", Toast.LENGTH_SHORT).show()
@@ -65,6 +283,7 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
             onActionClick = { navController.navigate(Routes.PROFILE) }
         )
 
+        // ── Total hero card ──────────────────────────────────────────────
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -93,6 +312,17 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
             Icon(Icons.Default.TrendingDown, null, tint = colors.accent, modifier = Modifier.size(30.dp))
         }
 
+        // ── Pie chart (only when there are expenses) ─────────────────────
+        if (expenses.isNotEmpty()) {
+            SectionHeading(title = "Spending breakdown")
+            ExpensePieChart(
+                slices = categoryTotals,
+                total = totalSpend,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        // ── Expense list ─────────────────────────────────────────────────
         SectionHeading(title = viewModel.t("recentExpenses"))
         Column(
             modifier = Modifier
@@ -104,11 +334,8 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
         ) {
             if (expenses.isNotEmpty()) {
                 expenses.forEach { expense ->
-                    val icon = when (expense.category) {
-                        "Gas" -> Icons.Default.LocalFireDepartment
-                        "Maintenance" -> Icons.Default.Build
-                        else -> Icons.Default.ShoppingCart
-                    }
+                    val sliceIndex = categoryTotals.indexOfFirst { it.first == expense.category }
+                    val dotColor = if (sliceIndex >= 0) colorForIndex(sliceIndex) else colors.primary
 
                     Row(
                         modifier = Modifier
@@ -121,16 +348,33 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(colors.secondary),
+                                .background(dotColor.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(icon, null, tint = colors.primary, modifier = Modifier.size(18.dp))
+                            val icon = when (expense.category) {
+                                "Gas" -> Icons.Default.LocalFireDepartment
+                                "Maintenance" -> Icons.Default.Build
+                                "Electricity" -> Icons.Default.ElectricBolt
+                                "Water" -> Icons.Default.WaterDrop
+                                "Grocery" -> Icons.Default.ShoppingBasket
+                                "Salary" -> Icons.Default.People
+                                "Rent" -> Icons.Default.Home
+                                "Packaging" -> Icons.Default.Inventory2
+                                else -> Icons.Default.ShoppingCart
+                            }
+                            Icon(icon, null, tint = dotColor, modifier = Modifier.size(18.dp))
                         }
                         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text(text = viewModel.localized(expense.category), color = colors.foreground, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text(text = expense.category, color = colors.foreground, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             Text(text = expense.note, color = colors.mutedForeground, fontSize = 11.sp)
+                            Text(text = expense.date, color = colors.mutedForeground, fontSize = 10.sp)
                         }
-                        Text(text = "₹${"%,.0f".format(expense.amount)}", color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "₹${"%,.0f".format(expense.amount)}",
+                            color = colors.foreground,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             } else {
@@ -142,6 +386,7 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
             }
         }
 
+        // ── Log expense form ─────────────────────────────────────────────
         SectionHeading(title = viewModel.t("logExpense"))
         Column(
             modifier = Modifier
@@ -150,13 +395,159 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
                 .border(1.dp, colors.border, RoundedCornerShape(20.dp))
                 .background(colors.card)
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(15.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            FormField(label = viewModel.t("category"), value = category, onValueChange = { category = it }, placeholder = viewModel.t("enterExpenseCategory"))
-            FormField(label = viewModel.t("amount"), value = amount, onValueChange = { amount = it }, placeholder = viewModel.t("enterExpenseAmount"), keyboardType = KeyboardType.Number)
-            FormField(label = viewModel.t("note"), value = note, onValueChange = { note = it }, placeholder = viewModel.t("enterExpenseNote"))
+
+            // Category heading + Add button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Category", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(colors.secondary)
+                        .clickable { showAddCategoryDialog = true }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Icon(Icons.Default.Add, null, tint = colors.primary, modifier = Modifier.size(14.dp))
+                        Text("New category", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.primary)
+                    }
+                }
+            }
+
+            // Category chips — wrap using FlowRow-style layout via a looped Row
+            val chunked = allCategories.chunked(3)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                chunked.forEach { rowItems ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        rowItems.forEach { cat ->
+                            val isSelected = selectedCategory == cat
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .border(
+                                        width = 1.5.dp,
+                                        color = if (isSelected) colors.primary else colors.border,
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                                    .background(if (isSelected) colors.primary else colors.background)
+                                    .clickable { selectedCategory = cat }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Text(
+                                    text = cat,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) colors.primaryForeground else colors.foreground,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            FormField(
+                label = viewModel.t("amount"),
+                value = amount,
+                onValueChange = { amount = it },
+                placeholder = viewModel.t("enterExpenseAmount"),
+                keyboardType = KeyboardType.Number
+            )
+            FormField(
+                label = viewModel.t("note"),
+                value = note,
+                onValueChange = { note = it },
+                placeholder = viewModel.t("enterExpenseNote")
+            )
 
             PrimaryButton(label = viewModel.t("saveExpense"), icon = Icons.Default.Add, onClick = add)
+        }
+    }
+
+    // ── Add-custom-category dialog ────────────────────────────────────────
+    if (showAddCategoryDialog) {
+        Dialog(onDismissRequest = { showAddCategoryDialog = false; newCategoryInput = "" }) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = colors.card,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Add category", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
+                        IconButton(onClick = { showAddCategoryDialog = false; newCategoryInput = "" }) {
+                            Icon(Icons.Default.Close, "Close", tint = colors.mutedForeground)
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = newCategoryInput,
+                        onValueChange = { newCategoryInput = it },
+                        label = { Text("Category name") },
+                        placeholder = { Text("e.g. Cleaning supplies") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(13.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = colors.primary,
+                            unfocusedBorderColor = colors.border,
+                            focusedContainerColor = colors.background,
+                            unfocusedContainerColor = colors.background
+                        )
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Button(
+                            onClick = { showAddCategoryDialog = false; newCategoryInput = "" },
+                            modifier = Modifier.weight(1f).height(46.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = colors.secondary, contentColor = colors.foreground),
+                            shape = RoundedCornerShape(13.dp)
+                        ) { Text("Cancel", fontWeight = FontWeight.Bold) }
+
+                        Button(
+                            onClick = {
+                                val trimmed = newCategoryInput.trim()
+                                when {
+                                    trimmed.isEmpty() ->
+                                        Toast.makeText(context, "Enter a category name", Toast.LENGTH_SHORT).show()
+                                    trimmed in allCategories ->
+                                        Toast.makeText(context, "Category already exists", Toast.LENGTH_SHORT).show()
+                                    else -> {
+                                        customCategories = customCategories + trimmed
+                                        selectedCategory = trimmed
+                                        newCategoryInput = ""
+                                        showAddCategoryDialog = false
+                                        Toast.makeText(context, "\"$trimmed\" added", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            },
+                            modifier = Modifier.weight(2f).height(46.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = colors.primaryForeground),
+                            shape = RoundedCornerShape(13.dp)
+                        ) {
+                            Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Add", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
         }
     }
 }

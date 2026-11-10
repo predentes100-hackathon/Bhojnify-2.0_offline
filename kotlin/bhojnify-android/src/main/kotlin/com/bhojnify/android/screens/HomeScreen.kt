@@ -48,9 +48,15 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
     val currentDate = LocalDate.now().toString()
     val dueReminders = reminders.filter { it.dueDate <= currentDate }
 
-    // Note: Java default Locale mapping would be needed for exact formatting,
-    // Using a simpler string for now, or just let i18n handle what it can
     val todayLabel = DateUtils.todayString()
+
+    // Today's attendance stats
+    val todayAttendance = attendance.filter { it.date == todayLabel }
+    val todayMealsCount = todayAttendance.size
+    val activeCustomerCount = customers.count { !DateUtils.getExpiryInfo(it.expiryDate).isExpired }
+    val todayAttendanceRate = if (activeCustomerCount > 0)
+        (todayMealsCount * 100) / (activeCustomerCount * 3) // 3 meals/day max
+    else 0
 
     val expiringCustomers = reactToCustomers(customers)
 
@@ -195,9 +201,11 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StatCard(
                 label = viewModel.t("mealsServed").uppercase(),
-                value = "${attendance.size}",
-                detail = viewModel.t("vsLastWeek"),
-                modifier = Modifier.weight(1f)
+                value = "$todayMealsCount",
+                detail = "$todayAttendanceRate% rate today",
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { navController.navigate(Routes.ATTENDANCE) }
             )
             StatCard(
                 label = viewModel.t("revenue").uppercase(),
@@ -217,8 +225,8 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
             )
             StatCard(
                 label = viewModel.t("activeMembers").uppercase(),
-                value = "${customers.size}",
-                detail = viewModel.t("attendanceRate"),
+                value = "$activeCustomerCount",
+                detail = "${customers.size} total",
                 modifier = Modifier.weight(1f)
             )
         }
@@ -228,7 +236,7 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
             IconTile(Icons.Default.People, viewModel.t("customers"), onClick = { navController.navigate(Routes.CUSTOMERS) }, modifier = Modifier.weight(1f))
             IconTile(Icons.Default.RestaurantMenu, viewModel.t("menuPlan"), onClick = { navController.navigate(Routes.MENU) }, modifier = Modifier.weight(1f))
             IconTile(Icons.Default.DateRange, viewModel.t("leaves"), onClick = { navController.navigate(Routes.LEAVE) }, modifier = Modifier.weight(1f))
-            IconTile(Icons.Default.Inventory, viewModel.t("inventory"), onClick = { navController.navigate(Routes.INVENTORY) }, modifier = Modifier.weight(1f))
+            IconTile(Icons.Default.ReceiptLong, viewModel.t("expenses"), onClick = { navController.navigate(Routes.EXPENSES) }, modifier = Modifier.weight(1f))
         }
 
         PrimaryButton(label = viewModel.t("openAdminPanel"), icon = Icons.Default.GridOn, onClick = { navController.navigate(Routes.ADMIN) })
