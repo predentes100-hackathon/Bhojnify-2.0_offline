@@ -75,6 +75,7 @@ fun OnboardingScreen(navController: NavController, viewModel: MessViewModel) {
             .fillMaxSize()
             .background(colors.background)
             .verticalScroll(rememberScrollState())
+            .imePadding()
             .padding(horizontal = 20.dp, vertical = 40.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {

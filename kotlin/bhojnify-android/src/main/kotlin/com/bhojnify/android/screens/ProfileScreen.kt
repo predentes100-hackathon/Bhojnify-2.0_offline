@@ -61,6 +61,7 @@ fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
             .fillMaxSize()
             .background(colors.background)
             .verticalScroll(rememberScrollState())
+            .imePadding()
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {

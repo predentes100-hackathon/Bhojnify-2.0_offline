@@ -31,6 +31,7 @@ sealed class BottomNavItem(val route: String, val icon: ImageVector, val labelKe
     object Profile : BottomNavItem(Routes.PROFILE, Icons.Default.Person, "profile")
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AppNavigator(
     viewModel: MessViewModel,
@@ -78,12 +79,13 @@ fun AppNavigator(
     }
 
     CompositionLocalProvider(LocalSnackbarHostState provides snackbarHostState) {
+        val isImeVisible = WindowInsets.isImeVisible
         if (isCompact) {
             Scaffold(
-                contentWindowInsets = WindowInsets.safeDrawing,
+                contentWindowInsets = ScaffoldDefaults.contentWindowInsets,
                 snackbarHost = { SnackbarHost(snackbarHostState) },
                 bottomBar = {
-                    if (showNavigation) {
+                    if (showNavigation && !isImeVisible) {
                         NavigationBar {
                             items.forEach { item ->
                                 val labelText = viewModel.t(item.labelKey)
@@ -107,7 +109,8 @@ fun AppNavigator(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding),
+                        .padding(innerPadding)
+                        .consumeWindowInsets(innerPadding),
                     contentAlignment = Alignment.TopCenter
                 ) {
                     Box(
@@ -122,13 +125,14 @@ fun AppNavigator(
             }
         } else {
             Scaffold(
-                contentWindowInsets = WindowInsets.safeDrawing,
+                contentWindowInsets = ScaffoldDefaults.contentWindowInsets,
                 snackbarHost = { SnackbarHost(snackbarHostState) }
             ) { innerPadding ->
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
+                        .consumeWindowInsets(innerPadding)
                 ) {
                     if (showNavigation) {
                         NavigationRail {
