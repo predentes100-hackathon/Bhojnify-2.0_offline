@@ -72,11 +72,13 @@ class MessStateManager(
         expiryDate: String,
         phone: String,
         paymentStatus: CustomerPaymentStatus = CustomerPaymentStatus.PAID,
-        imageUri: String? = null
+        imageUri: String? = null,
+        initialAmount: Double? = null
     ) {
         scope.launch {
+            val newId = generateId()
             val newCustomer = Customer(
-                id = generateId(),
+                id = newId,
                 name = name,
                 plan = plan,
                 joiningDate = joiningDate,
@@ -85,8 +87,22 @@ class MessStateManager(
                 phone = phone,
                 imageUri = imageUri
             )
-            repository.updateState {
-                it.copy(customers = listOf(newCustomer) + it.customers)
+            val payment = if (paymentStatus == CustomerPaymentStatus.PAID && initialAmount != null && initialAmount > 0.0) {
+                Payment(
+                    id = generateId(),
+                    date = joiningDate,
+                    amount = initialAmount,
+                    method = "Cash",
+                    note = "Onboarding payment: $name",
+                    customerId = newId
+                )
+            } else null
+
+            repository.updateState { current ->
+                current.copy(
+                    customers = listOf(newCustomer) + current.customers,
+                    payments = payment?.let { listOf(it) + current.payments } ?: current.payments
+                )
             }
         }
     }
