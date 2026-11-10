@@ -49,7 +49,15 @@ fun InventoryScreen(navController: NavController, viewModel: MessViewModel) {
     var reminderTitle by remember { mutableStateOf("") }
     var reminderDays by remember { mutableStateOf("") }
 
+    var attemptedSubmit by remember { mutableStateOf(false) }
+    val qVal = quantity.toDoubleOrNull()
+    val mVal = minimum.toDoubleOrNull()
+    val isNameError = attemptedSubmit && name.trim().isEmpty()
+    val isQuantityError = attemptedSubmit && qVal == null
+    val isMinimumError = attemptedSubmit && mVal == null
+
     val add = {
+        attemptedSubmit = true
         val q = quantity.toDoubleOrNull()
         val m = minimum.toDoubleOrNull()
         val d = reminderDays.toLongOrNull()
@@ -66,6 +74,7 @@ fun InventoryScreen(navController: NavController, viewModel: MessViewModel) {
             minimum = ""
             reminderTitle = ""
             reminderDays = ""
+            attemptedSubmit = false
             Toast.makeText(context, viewModel.t("inventoryItemAdded"), Toast.LENGTH_SHORT).show()
         }
     }
@@ -178,7 +187,14 @@ fun InventoryScreen(navController: NavController, viewModel: MessViewModel) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(15.dp)
         ) {
-            FormField(label = viewModel.t("ingredient"), value = name, onValueChange = { name = it }, placeholder = "e.g. Rice, Dal, Milk")
+            FormField(
+                label = viewModel.t("ingredient"),
+                value = name,
+                onValueChange = { name = it },
+                placeholder = "e.g. Rice, Dal, Milk",
+                isError = isNameError,
+                errorMessage = viewModel.t("fieldRequired")
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FormField(
                     label = viewModel.t("quantity"),
@@ -186,6 +202,8 @@ fun InventoryScreen(navController: NavController, viewModel: MessViewModel) {
                     onValueChange = { quantity = it },
                     placeholder = "e.g. 50",
                     keyboardType = KeyboardType.Number,
+                    isError = isQuantityError,
+                    errorMessage = viewModel.t("fieldRequired"),
                     modifier = Modifier.weight(1f)
                 )
                 FormField(
@@ -194,6 +212,8 @@ fun InventoryScreen(navController: NavController, viewModel: MessViewModel) {
                     onValueChange = { minimum = it },
                     placeholder = "e.g. 10",
                     keyboardType = KeyboardType.Number,
+                    isError = isMinimumError,
+                    errorMessage = viewModel.t("fieldRequired"),
                     modifier = Modifier.weight(1f)
                 )
             }

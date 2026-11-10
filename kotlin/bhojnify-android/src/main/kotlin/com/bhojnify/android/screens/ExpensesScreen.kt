@@ -262,7 +262,13 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
             .sortedByDescending { it.second }
     }
 
+    var attemptedSubmit by remember { mutableStateOf(false) }
+    val amountVal = amount.toDoubleOrNull()
+    val isAmountError = attemptedSubmit && (amountVal == null || amountVal <= 0)
+    val isNoteError = attemptedSubmit && note.trim().isEmpty()
+
     val add = {
+        attemptedSubmit = true
         val a = amount.toDoubleOrNull()
         if (a == null || a <= 0) {
             Toast.makeText(context, viewModel.t("enterValidAmount"), Toast.LENGTH_SHORT).show()
@@ -272,6 +278,7 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
             viewModel.addExpense(selectedCategory.trim(), a, note.trim())
             amount = ""
             note = ""
+            attemptedSubmit = false
             Toast.makeText(context, viewModel.t("expenseSaved"), Toast.LENGTH_SHORT).show()
         }
     }
@@ -432,13 +439,17 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
                 value = amount,
                 onValueChange = { amount = it },
                 placeholder = viewModel.t("enterExpenseAmount"),
-                keyboardType = KeyboardType.Number
+                keyboardType = KeyboardType.Number,
+                isError = isAmountError,
+                errorMessage = viewModel.t("enterValidAmount")
             )
             FormField(
                 label = viewModel.t("note"),
                 value = note,
                 onValueChange = { note = it },
-                placeholder = viewModel.t("enterExpenseNote")
+                placeholder = viewModel.t("enterExpenseNote"),
+                isError = isNoteError,
+                errorMessage = viewModel.t("fieldRequired")
             )
 
             PrimaryButton(label = viewModel.t("saveExpense"), icon = Icons.Default.Add, onClick = add)

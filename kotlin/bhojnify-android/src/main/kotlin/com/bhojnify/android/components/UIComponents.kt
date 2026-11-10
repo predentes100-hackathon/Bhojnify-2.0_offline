@@ -402,6 +402,8 @@ fun FormField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     keyboardType: KeyboardType = KeyboardType.Text,
+    isError: Boolean = false,
+    errorMessage: String? = null,
     modifier: Modifier = Modifier
 ) {
     val colors = BhojnifyTheme.colors
@@ -432,13 +434,19 @@ fun FormField(
             },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             shape = RoundedCornerShape(13.dp),
+            isError = isError,
+            supportingText = if (isError && errorMessage != null) {
+                { Text(text = errorMessage, color = colors.destructive, style = MaterialTheme.typography.bodySmall) }
+            } else null,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = colors.card,
                 unfocusedContainerColor = colors.card,
                 focusedBorderColor = colors.primary,
                 unfocusedBorderColor = colors.input,
                 focusedTextColor = colors.foreground,
-                unfocusedTextColor = colors.foreground
+                unfocusedTextColor = colors.foreground,
+                errorBorderColor = colors.destructive,
+                errorLabelColor = colors.destructive
             ),
             modifier = Modifier.fillMaxWidth()
         )

@@ -63,20 +63,23 @@ fun PaymentsScreen(navController: NavController, viewModel: MessViewModel) {
     var showCustomerPicker by remember { mutableStateOf(false) }
 
     val selectedCustomer = customers.find { it.id == selectedCustomerId }
-
+    var attemptedSubmit by remember { mutableStateOf(false) }
     val amountDouble = amount.toDoubleOrNull()
-    val isAmountError = amount.isNotBlank() && (amountDouble == null || amountDouble <= 0.0)
+    val isAmountError = (amount.isNotBlank() && (amountDouble == null || amountDouble <= 0.0)) || (attemptedSubmit && (amountDouble == null || amountDouble <= 0.0))
+    val isNoteError = attemptedSubmit && note.trim().isEmpty()
 
     val add: () -> Unit = {
+        attemptedSubmit = true
         val a = amount.toDoubleOrNull()
         if (a == null || a <= 0.0 || note.trim().isEmpty()) {
-            Toast.makeText(context, viewModel.t("paymentRequiredMessage"), Toast.LENGTH_SHORT).show()
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
         } else {
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
             viewModel.addPayment(a, method.trim(), note.trim(), selectedCustomerId)
             amount = ""
             note = ""
             selectedCustomerId = null
+            attemptedSubmit = false
             scope.launch {
                 snackbarHostState.showSnackbar(viewModel.t("paymentRecordedMessage"))
             }
@@ -220,8 +223,15 @@ fun PaymentsScreen(navController: NavController, viewModel: MessViewModel) {
                                             if (note.isBlank()) {
                                                 note = "${cust.name} - ${cust.plan}"
                                             }
-                                            cust.amount?.let { amt ->
-                                                amount = amt.toInt().toString()
+                                            val expectedAmt = cust.amount ?: when (cust.plan) {
+                                                com.bhojnify.core.model.MessPlans.MONTHLY_UNLIMITED -> 3000.0
+                                                com.bhojnify.core.model.MessPlans.MONTHLY_LUNCH_ONLY, com.bhojnify.core.model.MessPlans.MONTHLY_DINNER_ONLY -> 1800.0
+                                                com.bhojnify.core.model.MessPlans.FIFTEEN_DAY_FLEXI -> 1600.0
+                                                com.bhojnify.core.model.MessPlans.DAILY_PASS -> 100.0
+                                                else -> null
+                                            }
+                                            if (expectedAmt != null) {
+                                                amount = expectedAmt.toInt().toString()
                                             }
                                         }
                                     )
@@ -292,7 +302,9 @@ fun PaymentsScreen(navController: NavController, viewModel: MessViewModel) {
                     label = viewModel.t("note"),
                     value = note,
                     onValueChange = { note = it },
-                    placeholder = viewModel.t("enterPaymentNote")
+                    placeholder = viewModel.t("enterPaymentNote"),
+                    isError = isNoteError,
+                    errorMessage = viewModel.t("fieldRequired")
                 )
 
                 PrimaryButton(

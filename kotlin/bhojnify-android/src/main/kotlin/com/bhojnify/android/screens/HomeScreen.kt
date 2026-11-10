@@ -265,6 +265,27 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
             }
         }
 
+        // Quick Actions: Top two tasks with one-tap thumb-friendly buttons
+        SectionHeading(title = viewModel.t("quickActions"))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            PrimaryButton(
+                label = viewModel.t("markAttendance"),
+                icon = Icons.Default.CheckCircle,
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate(Routes.ATTENDANCE) }
+            )
+            PrimaryButton(
+                label = viewModel.t("recordPayment"),
+                icon = Icons.Default.Payment,
+                secondary = true,
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate(Routes.PAYMENTS) }
+            )
+        }
+
         SectionHeading(title = viewModel.t("runMessAction"))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             IconTile(Icons.Default.People, viewModel.t("customers"), onClick = { navController.navigate(Routes.CUSTOMERS) }, modifier = Modifier.weight(1f))

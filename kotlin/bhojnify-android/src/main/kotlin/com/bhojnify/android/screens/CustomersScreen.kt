@@ -85,6 +85,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
 
     // Add Customer Dialog State
     var showAddDialog by remember { mutableStateOf(false) }
+    var formSubmitted by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
     var selectedPlan by remember { mutableStateOf(MessPlans.ALL.first()) }
     var customPlan by remember { mutableStateOf("") }
@@ -130,6 +131,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
     }
 
     val handleCreateCustomer = {
+        formSubmitted = true
         val finalPlan = if (selectedPlan == "Custom Plan") customPlan.trim() else selectedPlan
         if (name.trim().isEmpty() || finalPlan.isEmpty() || joiningDate.trim().isEmpty() || expiryDate.trim().isEmpty() || phone.trim().isEmpty()) {
             Toast.makeText(context, viewModel.t("customerRequiredMessage"), Toast.LENGTH_SHORT).show()
@@ -154,6 +156,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
             initialAmount = ""
             selectedImageUri = null
             showAddDialog = false
+            formSubmitted = false
             Toast.makeText(context, viewModel.t("customerRegisteredSuccess"), Toast.LENGTH_SHORT).show()
         }
     }
@@ -279,6 +282,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                             paymentStatus = CustomerPaymentStatus.PAID
                             initialAmount = ""
                             selectedImageUri = null
+                            formSubmitted = false
                             showAddDialog = true
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -715,7 +719,9 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                         label = viewModel.t("customerName"),
                         value = name,
                         onValueChange = { name = it },
-                        placeholder = viewModel.t("enterCustomerName")
+                        placeholder = viewModel.t("enterCustomerName"),
+                        isError = formSubmitted && name.trim().isEmpty(),
+                        errorMessage = viewModel.t("fieldRequired")
                     )
 
                     Text(text = viewModel.t("selectPlan"), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
@@ -747,12 +753,27 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                     }
 
                     if (selectedPlan == "Custom Plan") {
-                        FormField(label = viewModel.t("planName"), value = customPlan, onValueChange = { customPlan = it }, placeholder = viewModel.t("enterPlanName"))
+                        FormField(
+                            label = viewModel.t("planName"),
+                            value = customPlan,
+                            onValueChange = { customPlan = it },
+                            placeholder = viewModel.t("enterPlanName"),
+                            isError = formSubmitted && selectedPlan == "Custom Plan" && customPlan.trim().isEmpty(),
+                            errorMessage = viewModel.t("fieldRequired")
+                        )
                     }
 
                     FormField(label = viewModel.t("joiningDate"), value = joiningDate, onValueChange = { joiningDate = it }, placeholder = "YYYY-MM-DD")
                     FormField(label = viewModel.t("expiryDate"), value = expiryDate, onValueChange = { expiryDate = it }, placeholder = "YYYY-MM-DD")
-                    FormField(label = viewModel.t("customerPhone"), value = phone, onValueChange = { phone = it }, placeholder = viewModel.t("enterCustomerPhone"), keyboardType = KeyboardType.Phone)
+                    FormField(
+                        label = viewModel.t("customerPhone"),
+                        value = phone,
+                        onValueChange = { phone = it },
+                        placeholder = viewModel.t("enterCustomerPhone"),
+                        keyboardType = KeyboardType.Phone,
+                        isError = formSubmitted && phone.trim().isEmpty(),
+                        errorMessage = viewModel.t("fieldRequired")
+                    )
                     FormField(label = viewModel.t("onboardingPayment"), value = initialAmount, onValueChange = { initialAmount = it }, placeholder = viewModel.t("optionalAmount"), keyboardType = KeyboardType.Number)
 
                     Text(text = viewModel.t("paymentStatus"), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
