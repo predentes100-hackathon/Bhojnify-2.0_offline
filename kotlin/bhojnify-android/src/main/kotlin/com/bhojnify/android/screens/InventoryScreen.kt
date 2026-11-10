@@ -61,7 +61,7 @@ fun InventoryScreen(navController: NavController, viewModel: MessViewModel) {
             minimum = ""
             reminderTitle = ""
             reminderDays = ""
-            Toast.makeText(context, "Inventory item added!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, viewModel.t("inventoryItemAdded"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -160,8 +160,8 @@ fun InventoryScreen(navController: NavController, viewModel: MessViewModel) {
             } else {
                 EmptyState(
                     icon = Icons.Default.Inventory,
-                    title = "No Inventory Items",
-                    detail = "Add essential items and reorder minimums to track kitchen supplies."
+                    title = viewModel.t("noInventoryItems"),
+                    detail = viewModel.t("noInventoryItemsDetail")
                 )
             }
         }

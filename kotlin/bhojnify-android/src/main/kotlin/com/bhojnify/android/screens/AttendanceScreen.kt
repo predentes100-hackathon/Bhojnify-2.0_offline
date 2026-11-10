@@ -81,20 +81,20 @@ fun AttendanceScreen(navController: NavController, viewModel: MessViewModel) {
     ) {
         Header(
             eyebrow = "Daily Tracking · $today",
-            title = "Attendance",
-            subtitle = "Mark who ate today, meal by meal"
+            title = viewModel.t("attendance"),
+            subtitle = viewModel.t("markAttendanceSubtitle")
         )
 
         // Today summary cards
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StatCard(
-                label = "TODAY",
+                label = viewModel.t("today").uppercase(),
                 value = "$todayTotal",
-                detail = "meals served",
+                detail = viewModel.t("mealsServed"),
                 modifier = Modifier.weight(1f)
             )
             StatCard(
-                label = "RATE",
+                label = viewModel.t("rate").uppercase(),
                 value = "$attendanceRate%",
                 detail = "${selectedMeal.displayName} attendance",
                 tone = when {
@@ -107,7 +107,7 @@ fun AttendanceScreen(navController: NavController, viewModel: MessViewModel) {
         }
 
         // Meal selector
-        SectionHeading(title = "Select Meal")
+        SectionHeading(title = viewModel.t("selectMeal"))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -183,8 +183,8 @@ fun AttendanceScreen(navController: NavController, viewModel: MessViewModel) {
             if (activeCustomers.isEmpty()) {
                 EmptyState(
                     icon = Icons.Default.People,
-                    title = "No Active Customers",
-                    detail = "Add customers first to start marking attendance."
+                    title = viewModel.t("noActiveCustomers"),
+                    detail = viewModel.t("noActiveCustomersDetail")
                 )
             } else {
                 activeCustomers.forEach { customer ->
@@ -244,7 +244,7 @@ fun AttendanceScreen(navController: NavController, viewModel: MessViewModel) {
                         }
 
                         if (alreadySaved) {
-                            Badge(label = "Saved", tone = BadgeTone.GREEN)
+                            Badge(label = viewModel.t("saved"), tone = BadgeTone.GREEN)
                         }
                     }
                 }
@@ -284,7 +284,7 @@ fun AttendanceScreen(navController: NavController, viewModel: MessViewModel) {
         // Today's full log
         val todayLog = attendance.filter { it.date == today }
         if (todayLog.isNotEmpty()) {
-            SectionHeading(title = "Today's Log")
+            SectionHeading(title = viewModel.t("todaysLog"))
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

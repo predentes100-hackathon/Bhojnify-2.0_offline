@@ -70,6 +70,7 @@ private fun colorForIndex(i: Int): Color = SLICE_COLORS[i % SLICE_COLORS.size]
 private fun ExpensePieChart(
     slices: List<Pair<String, Double>>,      // label → amount
     total: Double,
+    breakdownTitle: String = "Breakdown",
     modifier: Modifier = Modifier
 ) {
     if (slices.isEmpty() || total == 0.0) return
@@ -146,7 +147,7 @@ private fun ExpensePieChart(
                 .padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text("Breakdown", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
+            Text(breakdownTitle, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
 
             slices.forEachIndexed { i, (label, amount) ->
                 val pct = if (total > 0) amount / total * 100 else 0.0
@@ -257,14 +258,14 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
     val add = {
         val a = amount.toDoubleOrNull()
         if (a == null || a <= 0) {
-            Toast.makeText(context, "Enter a valid amount", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, viewModel.t("enterValidAmount"), Toast.LENGTH_SHORT).show()
         } else if (note.trim().isEmpty()) {
             Toast.makeText(context, viewModel.t("expenseRequiredMessage"), Toast.LENGTH_SHORT).show()
         } else {
             viewModel.addExpense(selectedCategory.trim(), a, note.trim())
             amount = ""
             note = ""
-            Toast.makeText(context, "Expense saved!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, viewModel.t("expenseSaved"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -314,10 +315,11 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
 
         // ── Pie chart (only when there are expenses) ─────────────────────
         if (expenses.isNotEmpty()) {
-            SectionHeading(title = "Spending breakdown")
+            SectionHeading(title = viewModel.t("spendingBreakdown"))
             ExpensePieChart(
                 slices = categoryTotals,
                 total = totalSpend,
+                breakdownTitle = viewModel.t("breakdown"),
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -380,8 +382,8 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
             } else {
                 EmptyState(
                     icon = Icons.Default.ReceiptLong,
-                    title = "No Expenses Logged",
-                    detail = "Record grocery, gas, maintenance, and kitchen utility expenses."
+                    title = viewModel.t("noExpensesLogged"),
+                    detail = viewModel.t("noExpensesLoggedDetail")
                 )
             }
         }
@@ -404,7 +406,7 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Category", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
+                Text(viewModel.t("category"), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
@@ -414,7 +416,7 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         Icon(Icons.Default.Add, null, tint = colors.primary, modifier = Modifier.size(14.dp))
-                        Text("New category", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.primary)
+                        Text(viewModel.t("newCategory"), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.primary)
                     }
                 }
             }
@@ -487,7 +489,7 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Add category", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
+                        Text(viewModel.t("addCategory"), fontSize = 17.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
                         IconButton(onClick = { showAddCategoryDialog = false; newCategoryInput = "" }) {
                             Icon(Icons.Default.Close, "Close", tint = colors.mutedForeground)
                         }
@@ -496,8 +498,8 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
                     OutlinedTextField(
                         value = newCategoryInput,
                         onValueChange = { newCategoryInput = it },
-                        label = { Text("Category name") },
-                        placeholder = { Text("e.g. Cleaning supplies") },
+                        label = { Text(viewModel.t("categoryName")) },
+                        placeholder = { Text(viewModel.t("enterCategoryName")) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(13.dp),
@@ -518,22 +520,22 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
                             modifier = Modifier.weight(1f).height(46.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.secondary, contentColor = colors.foreground),
                             shape = RoundedCornerShape(13.dp)
-                        ) { Text("Cancel", fontWeight = FontWeight.Bold) }
+                        ) { Text(viewModel.t("cancel"), fontWeight = FontWeight.Bold) }
 
                         Button(
                             onClick = {
                                 val trimmed = newCategoryInput.trim()
                                 when {
                                     trimmed.isEmpty() ->
-                                        Toast.makeText(context, "Enter a category name", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, viewModel.t("enterCategoryName"), Toast.LENGTH_SHORT).show()
                                     trimmed in allCategories ->
-                                        Toast.makeText(context, "Category already exists", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, viewModel.t("categoryAlreadyExists"), Toast.LENGTH_SHORT).show()
                                     else -> {
                                         customCategories = customCategories + trimmed
                                         selectedCategory = trimmed
                                         newCategoryInput = ""
                                         showAddCategoryDialog = false
-                                        Toast.makeText(context, "\"$trimmed\" added", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, viewModel.t("categoryAdded", mapOf("name" to trimmed)), Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             },
@@ -543,7 +545,7 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
                         ) {
                             Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Add", fontWeight = FontWeight.Bold)
+                            Text(viewModel.t("add"), fontWeight = FontWeight.Bold)
                         }
                     }
                 }

@@ -110,7 +110,7 @@ fun FeedbackScreen(navController: NavController, viewModel: MessViewModel) {
                 EmptyState(
                     icon = Icons.Default.ChatBubbleOutline,
                     title = viewModel.t("noFeedback"),
-                    detail = "Customer dish ratings and recommendations will appear here."
+                    detail = viewModel.t("recentFeedbackDetail")
                 )
             }
         }

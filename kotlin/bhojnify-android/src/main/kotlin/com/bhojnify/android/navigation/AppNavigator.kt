@@ -18,10 +18,10 @@ import androidx.navigation.compose.rememberNavController
 import com.bhojnify.android.screens.*
 import com.bhojnify.android.viewmodel.MessViewModel
 
-sealed class BottomNavItem(val route: String, val icon: ImageVector, val label: String) {
-    object Home : BottomNavItem(Routes.HOME, Icons.Default.Home, "Home")
-    object Admin : BottomNavItem(Routes.ADMIN, Icons.Default.Settings, "Admin")
-    object Profile : BottomNavItem(Routes.PROFILE, Icons.Default.Person, "Profile")
+sealed class BottomNavItem(val route: String, val icon: ImageVector, val labelKey: String) {
+    object Home : BottomNavItem(Routes.HOME, Icons.Default.Home, "home")
+    object Admin : BottomNavItem(Routes.ADMIN, Icons.Default.Settings, "admin")
+    object Profile : BottomNavItem(Routes.PROFILE, Icons.Default.Person, "profile")
 }
 
 @Composable
@@ -42,9 +42,10 @@ fun AppNavigator(viewModel: MessViewModel) {
                 NavigationBar {
                     val items = listOf(BottomNavItem.Home, BottomNavItem.Admin, BottomNavItem.Profile)
                     items.forEach { item ->
+                        val labelText = viewModel.t(item.labelKey)
                         NavigationBarItem(
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label) },
+                            icon = { Icon(item.icon, contentDescription = labelText) },
+                            label = { Text(labelText) },
                             selected = currentRoute == item.route,
                             onClick = {
                                 navController.navigate(item.route) {

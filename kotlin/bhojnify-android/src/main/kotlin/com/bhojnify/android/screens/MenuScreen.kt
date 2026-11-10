@@ -59,7 +59,7 @@ fun MenuScreen(navController: NavController, viewModel: MessViewModel) {
             )
             dish = ""
             note = ""
-            Toast.makeText(context, "Dish added to menu!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, viewModel.t("dishAdded"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -123,7 +123,7 @@ fun MenuScreen(navController: NavController, viewModel: MessViewModel) {
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Icon(Icons.Default.FileDownload, null, tint = colors.primary, modifier = Modifier.size(16.dp))
-                        Text("Export CSV", color = colors.primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text(viewModel.t("exportCsv"), color = colors.primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -197,7 +197,7 @@ fun MenuScreen(navController: NavController, viewModel: MessViewModel) {
             EmptyState(
                 icon = Icons.Default.RestaurantMenu,
                 title = viewModel.t("noMenuItems"),
-                detail = "Create breakfast, lunch, and dinner plans for the upcoming week."
+                detail = viewModel.t("noMenuItemsDetail")
             )
         }
 

@@ -116,8 +116,8 @@ fun PaymentsScreen(navController: NavController, viewModel: MessViewModel) {
             } else {
                 EmptyState(
                     icon = Icons.Default.Payment,
-                    title = "No Payments Found",
-                    detail = "Received fees from customers will show up here."
+                    title = viewModel.t("noPaymentsFound"),
+                    detail = viewModel.t("noPaymentsFoundDetail")
                 )
             }
         }

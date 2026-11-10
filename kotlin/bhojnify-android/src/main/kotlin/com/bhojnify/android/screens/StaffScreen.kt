@@ -49,7 +49,7 @@ fun StaffScreen(navController: NavController, viewModel: MessViewModel) {
             role = ""
             phone = ""
             salary = ""
-            Toast.makeText(context, "Team member added!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, viewModel.t("teamMemberAdded"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -140,8 +140,8 @@ fun StaffScreen(navController: NavController, viewModel: MessViewModel) {
             } else {
                 EmptyState(
                     icon = Icons.Default.Groups,
-                    title = "No Staff Members",
-                    detail = "Add chefs, helpers, and cleaning staff to track mess payroll."
+                    title = viewModel.t("noStaffMembers"),
+                    detail = viewModel.t("noStaffMembersDetail")
                 )
             }
         }

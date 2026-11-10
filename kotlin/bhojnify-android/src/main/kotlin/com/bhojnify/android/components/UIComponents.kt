@@ -29,6 +29,7 @@ fun Header(
     title: String,
     eyebrow: String? = null,
     subtitle: String? = null,
+    actionContentDescription: String? = null,
     onActionClick: (() -> Unit)? = null
 ) {
     val colors = BhojnifyTheme.colors
@@ -78,7 +79,7 @@ fun Header(
             ) {
                 Icon(
                     imageVector = Icons.Default.Person,
-                    contentDescription = "Profile",
+                    contentDescription = actionContentDescription ?: "Profile",
                     tint = colors.foreground,
                     modifier = Modifier.size(20.dp)
                 )

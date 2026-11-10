@@ -72,6 +72,7 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
             eyebrow = "${viewModel.t("ownerWorkspace")} · $todayLabel",
             title = viewModel.t("goodMorning", mapOf("name" to (profile.name.ifEmpty { viewModel.t("owner") }))),
             subtitle = profile.messName.ifEmpty { viewModel.t("herePulse") },
+            actionContentDescription = viewModel.t("profile"),
             onActionClick = { navController.navigate(Routes.PROFILE) }
         )
 
@@ -241,17 +242,40 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
 
         PrimaryButton(label = viewModel.t("openAdminPanel"), icon = Icons.Default.GridOn, onClick = { navController.navigate(Routes.ADMIN) })
 
-        SectionHeading(title = viewModel.t("needsAttention"))
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(19.dp))
-                .border(1.dp, colors.border, RoundedCornerShape(19.dp))
-                .background(colors.card)
-                .padding(horizontal = 14.dp)
-        ) {
-            // Attention items logic...
-            Text("Needs attention content here...", modifier = Modifier.padding(14.dp), color = colors.mutedForeground)
+        SectionHeading(
+            title = viewModel.t("needsAttention"),
+            action = if (lowStock.size > 5) viewModel.t("viewAll") else null,
+            onActionClick = { navController.navigate(Routes.INVENTORY) }
+        )
+        if (lowStock.isEmpty()) {
+            EmptyState(
+                icon = Icons.Default.CheckCircle,
+                title = viewModel.t("allStockHealthy"),
+                detail = viewModel.t("allClearHealthy")
+            )
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(19.dp))
+                    .border(1.dp, colors.border, RoundedCornerShape(19.dp))
+                    .background(colors.card)
+                    .padding(horizontal = 14.dp)
+            ) {
+                val displayItems = lowStock.take(5)
+                displayItems.forEachIndexed { index, item ->
+                    RowItem(
+                        icon = Icons.Default.Warning,
+                        title = item.name,
+                        detail = "${item.quantity} / ${item.minimum} ${item.unit}",
+                        destructive = true,
+                        onClick = { navController.navigate(Routes.INVENTORY) }
+                    )
+                    if (index < displayItems.size - 1) {
+                        HorizontalDivider(color = colors.border.copy(alpha = 0.5f))
+                    }
+                }
+            }
         }
     }
 }

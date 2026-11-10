@@ -211,7 +211,7 @@ fun LeaveScreen(navController: NavController, viewModel: MessViewModel) {
                 }
 
                 FormField(label = viewModel.t("leaveFrom"), value = from, onValueChange = { from = it }, placeholder = "YYYY-MM-DD")
-                FormField(label = viewModel.t("leaveToOptional"), value = to, onValueChange = { to = it }, placeholder = "YYYY-MM-DD (Leave empty if ongoing)")
+                FormField(label = viewModel.t("leaveToOptional"), value = to, onValueChange = { to = it }, placeholder = viewModel.t("leaveToPlaceholder"))
                 FormField(label = viewModel.t("leaveNoteOptional"), value = note, onValueChange = { note = it }, placeholder = viewModel.t("enterLeaveNote"))
 
                 PrimaryButton(

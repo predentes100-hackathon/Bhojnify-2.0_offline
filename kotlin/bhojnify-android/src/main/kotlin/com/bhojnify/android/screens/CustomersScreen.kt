@@ -131,7 +131,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
             initialAmount = ""
             selectedImageUri = null
             showAddDialog = false
-            Toast.makeText(context, "Customer registered successfully!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, viewModel.t("customerRegisteredSuccess"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -628,7 +628,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                             Button(
                                 onClick = {
                                     viewModel.renewCustomerPlan(customer.id)
-                                    Toast.makeText(context, "Plan renewed successfully!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, viewModel.t("planRenewedSuccess"), Toast.LENGTH_SHORT).show()
                                 },
                                 modifier = Modifier.weight(1f).height(34.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = colors.primaryForeground),
@@ -773,7 +773,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                     FormField(label = viewModel.t("joiningDate"), value = joiningDate, onValueChange = { joiningDate = it }, placeholder = "YYYY-MM-DD")
                     FormField(label = viewModel.t("expiryDate"), value = expiryDate, onValueChange = { expiryDate = it }, placeholder = "YYYY-MM-DD")
                     FormField(label = viewModel.t("customerPhone"), value = phone, onValueChange = { phone = it }, placeholder = viewModel.t("enterCustomerPhone"), keyboardType = KeyboardType.Phone)
-                    FormField(label = "Onboarding payment (₹)", value = initialAmount, onValueChange = { initialAmount = it }, placeholder = "Optional amount", keyboardType = KeyboardType.Number)
+                    FormField(label = viewModel.t("onboardingPayment"), value = initialAmount, onValueChange = { initialAmount = it }, placeholder = viewModel.t("optionalAmount"), keyboardType = KeyboardType.Number)
 
                     Text(text = viewModel.t("paymentStatus"), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -988,7 +988,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                         ) {
                             Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(text = "Edit info", fontWeight = FontWeight.Bold)
+                            Text(text = viewModel.t("editInfo"), fontWeight = FontWeight.Bold)
                         }
 
                         if (customer.paymentStatus == CustomerPaymentStatus.UNPAID) {
@@ -1004,14 +1004,14 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                             ) {
                                 Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = "Mark as paid", fontWeight = FontWeight.Bold)
+                                Text(text = viewModel.t("markAsPaid"), fontWeight = FontWeight.Bold)
                             }
                         }
 
                         Button(
                             onClick = {
                                 viewModel.renewCustomerPlan(customer.id)
-                                Toast.makeText(context, "Plan renewed successfully!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, viewModel.t("planRenewedSuccess"), Toast.LENGTH_SHORT).show()
                                 selectedCustomerForDetails = null
                             },
                             modifier = Modifier.fillMaxWidth().height(44.dp),
@@ -1026,7 +1026,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                         Button(
                             onClick = {
                                 viewModel.deleteCustomer(customer.id)
-                                Toast.makeText(context, "Customer removed", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, viewModel.t("customerRemoved"), Toast.LENGTH_SHORT).show()
                                 selectedCustomerForDetails = null
                             },
                             modifier = Modifier.fillMaxWidth().height(44.dp),
@@ -1049,15 +1049,15 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
             Surface(shape = RoundedCornerShape(22.dp), color = colors.card, modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
                 Column(modifier = Modifier.padding(20.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Edit customer", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
+                        Text(viewModel.t("editCustomer"), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
                         IconButton(onClick = { customerToEdit = null }) { Icon(Icons.Default.Close, "Close", tint = colors.mutedForeground) }
                     }
-                    FormField(label = "Name", value = editName, onValueChange = { editName = it }, placeholder = "Customer name")
-                    FormField(label = "Phone", value = editPhone, onValueChange = { editPhone = it }, placeholder = "Phone number", keyboardType = KeyboardType.Phone)
-                    FormField(label = "Plan", value = editPlan, onValueChange = { editPlan = it }, placeholder = "Plan name")
-                    FormField(label = "Joining date (YYYY-MM-DD)", value = editJoiningDate, onValueChange = { editJoiningDate = it }, placeholder = "YYYY-MM-DD")
-                    FormField(label = "Expiry date (YYYY-MM-DD)", value = editExpiryDate, onValueChange = { editExpiryDate = it }, placeholder = "YYYY-MM-DD")
-                    Text("Payment status", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
+                    FormField(label = viewModel.t("customerName"), value = editName, onValueChange = { editName = it }, placeholder = viewModel.t("customerName"))
+                    FormField(label = viewModel.t("customerPhone"), value = editPhone, onValueChange = { editPhone = it }, placeholder = viewModel.t("enterCustomerPhone"), keyboardType = KeyboardType.Phone)
+                    FormField(label = viewModel.t("planName"), value = editPlan, onValueChange = { editPlan = it }, placeholder = viewModel.t("planName"))
+                    FormField(label = viewModel.t("joiningDate"), value = editJoiningDate, onValueChange = { editJoiningDate = it }, placeholder = "YYYY-MM-DD")
+                    FormField(label = viewModel.t("expiryDate"), value = editExpiryDate, onValueChange = { editExpiryDate = it }, placeholder = "YYYY-MM-DD")
+                    Text(viewModel.t("paymentStatus"), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         CustomerPaymentStatus.values().forEach { status ->
                             val isSel = editPaymentStatus == status
@@ -1067,22 +1067,22 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                         }
                     }
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(onClick = { customerToEdit = null }, modifier = Modifier.weight(1f).height(46.dp), colors = ButtonDefaults.buttonColors(containerColor = colors.secondary, contentColor = colors.foreground), shape = RoundedCornerShape(13.dp)) { Text("Cancel", fontWeight = FontWeight.Bold) }
+                        Button(onClick = { customerToEdit = null }, modifier = Modifier.weight(1f).height(46.dp), colors = ButtonDefaults.buttonColors(containerColor = colors.secondary, contentColor = colors.foreground), shape = RoundedCornerShape(13.dp)) { Text(viewModel.t("cancel"), fontWeight = FontWeight.Bold) }
                         Button(
                             onClick = {
                                 if (editName.isNotBlank() && editPhone.isNotBlank()) {
                                     viewModel.updateCustomer(original.id) { it.copy(name = editName.trim(), phone = editPhone.trim(), plan = editPlan.trim(), joiningDate = editJoiningDate.trim(), expiryDate = editExpiryDate.trim(), paymentStatus = editPaymentStatus) }
-                                    Toast.makeText(context, "Customer updated", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, viewModel.t("customerUpdated"), Toast.LENGTH_SHORT).show()
                                     customerToEdit = null
                                 } else {
-                                    Toast.makeText(context, "Name and phone are required", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, viewModel.t("namePhoneRequired"), Toast.LENGTH_SHORT).show()
                                 }
                             },
                             modifier = Modifier.weight(2f).height(46.dp), colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = colors.primaryForeground), shape = RoundedCornerShape(13.dp)
                         ) {
                             Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Save changes", fontWeight = FontWeight.Bold)
+                            Text(viewModel.t("saveChanges"), fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -1095,22 +1095,22 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
         Dialog(onDismissRequest = { showMarkPaidDialog = null }) {
             Surface(shape = RoundedCornerShape(22.dp), color = colors.card, modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
                 Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Mark as paid — ${customer.name}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
-                    FormField(label = "Amount received (₹)", value = markPaidAmount, onValueChange = { markPaidAmount = it }, placeholder = "Enter amount", keyboardType = KeyboardType.Number)
-                    Text("Leave blank to just mark paid without recording a payment.", color = colors.mutedForeground, fontSize = 12.sp)
+                    Text(viewModel.t("markAsPaidCustomer", mapOf("name" to customer.name)), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.foreground)
+                    FormField(label = viewModel.t("amountReceived"), value = markPaidAmount, onValueChange = { markPaidAmount = it }, placeholder = viewModel.t("enterAmount"), keyboardType = KeyboardType.Number)
+                    Text(viewModel.t("leaveBlankMarkPaid"), color = colors.mutedForeground, fontSize = 12.sp)
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(onClick = { showMarkPaidDialog = null }, modifier = Modifier.weight(1f).height(46.dp), colors = ButtonDefaults.buttonColors(containerColor = colors.secondary, contentColor = colors.foreground), shape = RoundedCornerShape(13.dp)) { Text("Cancel", fontWeight = FontWeight.Bold) }
+                        Button(onClick = { showMarkPaidDialog = null }, modifier = Modifier.weight(1f).height(46.dp), colors = ButtonDefaults.buttonColors(containerColor = colors.secondary, contentColor = colors.foreground), shape = RoundedCornerShape(13.dp)) { Text(viewModel.t("cancel"), fontWeight = FontWeight.Bold) }
                         Button(
                             onClick = {
                                 viewModel.markCustomerPaid(customer.id, markPaidAmount.toDoubleOrNull())
-                                Toast.makeText(context, "Marked as paid", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, viewModel.t("markedPaid"), Toast.LENGTH_SHORT).show()
                                 showMarkPaidDialog = null
                             },
                             modifier = Modifier.weight(2f).height(46.dp), colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = colors.primaryForeground), shape = RoundedCornerShape(13.dp)
                         ) {
                             Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Confirm paid", fontWeight = FontWeight.Bold)
+                            Text(viewModel.t("confirmPaid"), fontWeight = FontWeight.Bold)
                         }
                     }
                 }
