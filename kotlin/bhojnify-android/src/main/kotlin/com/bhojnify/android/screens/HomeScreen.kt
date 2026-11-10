@@ -197,38 +197,72 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
             Icon(Icons.Default.Restaurant, null, tint = colors.accent, modifier = Modifier.size(46.dp))
         }
 
-        // Stats Row
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatCard(
-                label = viewModel.t("mealsServed").uppercase(),
-                value = "$todayMealsCount",
-                detail = "$todayAttendanceRate% rate today",
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { navController.navigate(Routes.ATTENDANCE) }
-            )
-            StatCard(
-                label = viewModel.t("revenue").uppercase(),
-                value = "₹${"%.1f".format(revenue / 1000.0)}k",
-                detail = viewModel.t("thisMonth"),
-                tone = BadgeTone.AMBER,
-                modifier = Modifier.weight(1f)
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatCard(
-                label = viewModel.t("expenses").uppercase(),
-                value = "₹${"%.1f".format(spend / 1000.0)}k",
-                detail = viewModel.t("thisMonth"),
-                tone = BadgeTone.RED,
-                modifier = Modifier.weight(1f)
-            )
-            StatCard(
-                label = viewModel.t("activeMembers").uppercase(),
-                value = "$activeCustomerCount",
-                detail = "${customers.size} total",
-                modifier = Modifier.weight(1f)
-            )
+        // Stats Row - 4 columns on wide/expanded screen, 2x2 on compact
+        val isWide = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600
+        if (isWide) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                StatCard(
+                    label = viewModel.t("mealsServed").uppercase(),
+                    value = "$todayMealsCount",
+                    detail = "$todayAttendanceRate% rate today",
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { navController.navigate(Routes.ATTENDANCE) }
+                )
+                StatCard(
+                    label = viewModel.t("revenue").uppercase(),
+                    value = "₹${"%.1f".format(revenue / 1000.0)}k",
+                    detail = viewModel.t("thisMonth"),
+                    tone = BadgeTone.AMBER,
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    label = viewModel.t("expenses").uppercase(),
+                    value = "₹${"%.1f".format(spend / 1000.0)}k",
+                    detail = viewModel.t("thisMonth"),
+                    tone = BadgeTone.RED,
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    label = viewModel.t("activeMembers").uppercase(),
+                    value = "$activeCustomerCount",
+                    detail = "${customers.size} total",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                StatCard(
+                    label = viewModel.t("mealsServed").uppercase(),
+                    value = "$todayMealsCount",
+                    detail = "$todayAttendanceRate% rate today",
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { navController.navigate(Routes.ATTENDANCE) }
+                )
+                StatCard(
+                    label = viewModel.t("revenue").uppercase(),
+                    value = "₹${"%.1f".format(revenue / 1000.0)}k",
+                    detail = viewModel.t("thisMonth"),
+                    tone = BadgeTone.AMBER,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                StatCard(
+                    label = viewModel.t("expenses").uppercase(),
+                    value = "₹${"%.1f".format(spend / 1000.0)}k",
+                    detail = viewModel.t("thisMonth"),
+                    tone = BadgeTone.RED,
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    label = viewModel.t("activeMembers").uppercase(),
+                    value = "$activeCustomerCount",
+                    detail = "${customers.size} total",
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
 
         SectionHeading(title = viewModel.t("runMessAction"))

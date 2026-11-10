@@ -1,7 +1,5 @@
 <resources>
     <style name="Theme.Bhojnify" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:statusBarColor">#F7F4EC</item>
-        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <style name="Theme.Bhojnify.Starting" parent="Theme.SplashScreen">

@@ -1,15 +1,18 @@
 package com.bhojnify.android.navigation
 
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -26,7 +29,10 @@ sealed class BottomNavItem(val route: String, val icon: ImageVector, val labelKe
 }
 
 @Composable
-fun AppNavigator(viewModel: MessViewModel) {
+fun AppNavigator(
+    viewModel: MessViewModel,
+    widthSizeClass: WindowWidthSizeClass = WindowWidthSizeClass.Compact
+) {
     val navController = rememberNavController()
 
     val isReady by viewModel.isReady.collectAsStateWithLifecycle()
@@ -38,38 +44,17 @@ fun AppNavigator(viewModel: MessViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val startDestination = if (state.onboardingComplete) Routes.HOME else Routes.ONBOARDING
 
-    Scaffold(
-        bottomBar = {
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            val currentRoute = navBackStackEntry?.destination?.route
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    val showNavigation = currentRoute in listOf(Routes.HOME, Routes.ADMIN, Routes.PROFILE)
+    val isCompact = widthSizeClass == WindowWidthSizeClass.Compact
+    val items = listOf(BottomNavItem.Home, BottomNavItem.Admin, BottomNavItem.Profile)
 
-            // Show bottom bar only on root tabs
-            if (currentRoute in listOf(Routes.HOME, Routes.ADMIN, Routes.PROFILE)) {
-                NavigationBar {
-                    val items = listOf(BottomNavItem.Home, BottomNavItem.Admin, BottomNavItem.Profile)
-                    items.forEach { item ->
-                        val labelText = viewModel.t(item.labelKey)
-                        NavigationBarItem(
-                            icon = { Icon(item.icon, contentDescription = labelText) },
-                            label = { Text(labelText) },
-                            selected = currentRoute == item.route,
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    ) { innerPadding ->
+    val navContent: @Composable (Modifier) -> Unit = { modifier ->
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = Modifier.padding(innerPadding)
+            modifier = modifier
         ) {
             composable(Routes.ONBOARDING) { OnboardingScreen(navController, viewModel) }
             composable(Routes.HOME) { HomeScreen(navController, viewModel) }
@@ -85,6 +70,90 @@ fun AppNavigator(viewModel: MessViewModel) {
             composable(Routes.ADMIN) { AdminScreen(navController, viewModel) }
             composable(Routes.PROFILE) { ProfileScreen(navController, viewModel) }
             composable(Routes.LEAVE) { LeaveScreen(navController, viewModel) }
+        }
+    }
+
+    if (isCompact) {
+        Scaffold(
+            contentWindowInsets = WindowInsets.safeDrawing,
+            bottomBar = {
+                if (showNavigation) {
+                    NavigationBar {
+                        items.forEach { item ->
+                            val labelText = viewModel.t(item.labelKey)
+                            NavigationBarItem(
+                                icon = { Icon(item.icon, contentDescription = labelText) },
+                                label = { Text(labelText) },
+                                selected = currentRoute == item.route,
+                                onClick = {
+                                    navController.navigate(item.route) {
+                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .widthIn(max = 720.dp)
+                        .fillMaxWidth()
+                ) {
+                    navContent(Modifier.fillMaxSize())
+                }
+            }
+        }
+    } else {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+        ) {
+            if (showNavigation) {
+                NavigationRail {
+                    items.forEach { item ->
+                        val labelText = viewModel.t(item.labelKey)
+                        NavigationRailItem(
+                            icon = { Icon(item.icon, contentDescription = labelText) },
+                            label = { Text(labelText) },
+                            selected = currentRoute == item.route,
+                            onClick = {
+                                navController.navigate(item.route) {
+                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .widthIn(max = 720.dp)
+                        .fillMaxWidth()
+                ) {
+                    navContent(Modifier.fillMaxSize())
+                }
+            }
         }
     }
 }

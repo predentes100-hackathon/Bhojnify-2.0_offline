@@ -44,26 +44,28 @@ fun Header(
             if (eyebrow != null) {
                 Text(
                     text = eyebrow.uppercase(),
-                    color = colors.primary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.2.sp
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = colors.primary,
+                        fontSize = 11.sp,
+                        letterSpacing = 1.2.sp
+                    )
                 )
                 Spacer(modifier = Modifier.height(4.dp))
             }
             Text(
                 text = title,
-                color = colors.foreground,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                lineHeight = 32.sp
+                style = MaterialTheme.typography.displaySmall.copy(
+                    color = colors.foreground,
+                    lineHeight = 32.sp
+                )
             )
             if (subtitle != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = subtitle,
-                    color = colors.mutedForeground,
-                    fontSize = 14.sp
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = colors.mutedForeground
+                    )
                 )
             }
         }
@@ -104,16 +106,17 @@ fun SectionHeading(
     ) {
         Text(
             text = title,
-            color = colors.foreground,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
+            style = MaterialTheme.typography.titleMedium.copy(
+                color = colors.foreground
+            )
         )
         if (action != null) {
             Text(
                 text = action,
-                color = colors.primary,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    color = colors.primary,
+                    fontSize = 13.sp
+                ),
                 modifier = Modifier.clickable { onActionClick?.invoke() }
             )
         }
@@ -143,9 +146,11 @@ fun Badge(
     ) {
         Text(
             text = label,
-            color = fg,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold
+            style = MaterialTheme.typography.labelMedium.copy(
+                color = fg,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+            )
         )
     }
 }
@@ -194,9 +199,10 @@ fun PrimaryButton(
             }
             Text(
                 text = label,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = fg
+                style = MaterialTheme.typography.labelLarge.copy(
+                    color = fg,
+                    fontSize = 15.sp
+                )
             )
         }
     }
@@ -240,10 +246,11 @@ fun IconTile(
             }
             Text(
                 text = label,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = colors.foreground,
-                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    color = colors.foreground,
+                    fontSize = 11.sp,
+                    textAlign = TextAlign.Center
+                ),
                 maxLines = 1
             )
         }
@@ -278,23 +285,27 @@ fun StatCard(
         ) {
             Text(
                 text = label,
-                color = fg.copy(alpha = 0.78f),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.labelMedium.copy(
+                    color = fg.copy(alpha = 0.78f),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
             )
             Text(
                 text = value,
-                color = fg,
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-0.5).sp
+                style = MaterialTheme.typography.displaySmall.copy(
+                    color = fg,
+                    fontSize = 26.sp,
+                    letterSpacing = (-0.5).sp
+                )
             )
             if (detail != null) {
                 Text(
                     text = detail,
-                    color = fg.copy(alpha = 0.82f),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        color = fg.copy(alpha = 0.82f),
+                        fontSize = 11.sp
+                    )
                 )
             }
         }
@@ -339,16 +350,19 @@ fun RowItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.foreground
+                style = MaterialTheme.typography.titleSmall.copy(
+                    color = colors.foreground,
+                    fontSize = 15.sp
+                )
             )
             if (detail != null) {
                 Text(
                     text = detail,
-                    fontSize = 12.sp,
-                    color = colors.mutedForeground,
-                    lineHeight = 16.sp
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = colors.mutedForeground,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp
+                    )
                 )
             }
         }
@@ -382,15 +396,24 @@ fun FormField(
         if (label.isNotBlank()) {
             Text(
                 text = label,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.foreground
+                style = MaterialTheme.typography.titleSmall.copy(
+                    color = colors.foreground,
+                    fontSize = 13.sp
+                )
             )
         }
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = { Text(text = placeholder, color = colors.mutedForeground, fontSize = 14.sp) },
+            placeholder = {
+                Text(
+                    text = placeholder,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = colors.mutedForeground,
+                        fontSize = 14.sp
+                    )
+                )
+            },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             shape = RoundedCornerShape(13.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -434,16 +457,19 @@ fun EmptyState(
             )
             Text(
                 text = title,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.foreground
+                style = MaterialTheme.typography.titleSmall.copy(
+                    color = colors.foreground,
+                    fontSize = 16.sp
+                )
             )
             Text(
                 text = detail,
-                fontSize = 13.sp,
-                color = colors.mutedForeground,
-                textAlign = TextAlign.Center,
-                lineHeight = 18.sp
+                style = MaterialTheme.typography.bodySmall.copy(
+                    color = colors.mutedForeground,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                    textAlign = TextAlign.Center
+                )
             )
         }
     }
