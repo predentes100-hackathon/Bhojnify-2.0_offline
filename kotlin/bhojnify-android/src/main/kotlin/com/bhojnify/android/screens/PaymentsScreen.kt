@@ -33,6 +33,11 @@ import com.bhojnify.android.components.Header
 import com.bhojnify.android.components.PrimaryButton
 import com.bhojnify.android.components.SectionHeading
 import com.bhojnify.android.navigation.Routes
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.bhojnify.android.components.CustomerSkeletonItem
+import com.bhojnify.android.components.LocalSnackbarHostState
+import kotlinx.coroutines.launch
 import com.bhojnify.android.theme.BhojnifyTheme
 import com.bhojnify.android.viewmodel.MessViewModel
 import com.bhojnify.core.model.Customer
@@ -44,6 +49,9 @@ fun PaymentsScreen(navController: NavController, viewModel: MessViewModel) {
     val colors = BhojnifyTheme.colors
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = LocalSnackbarHostState.current
+    val haptics = LocalHapticFeedback.current
 
     val payments = state.payments
     val customers = state.customers
@@ -59,17 +67,41 @@ fun PaymentsScreen(navController: NavController, viewModel: MessViewModel) {
     val amountDouble = amount.toDoubleOrNull()
     val isAmountError = amount.isNotBlank() && (amountDouble == null || amountDouble <= 0.0)
 
-    val add = {
+    val add: () -> Unit = {
         val a = amount.toDoubleOrNull()
         if (a == null || a <= 0.0 || note.trim().isEmpty()) {
             Toast.makeText(context, viewModel.t("paymentRequiredMessage"), Toast.LENGTH_SHORT).show()
         } else {
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
             viewModel.addPayment(a, method.trim(), note.trim(), selectedCustomerId)
             amount = ""
             note = ""
             selectedCustomerId = null
-            Toast.makeText(context, viewModel.t("paymentRecordedMessage"), Toast.LENGTH_SHORT).show()
+            scope.launch {
+                snackbarHostState.showSnackbar(viewModel.t("paymentRecordedMessage"))
+            }
         }
+    }
+
+    val isReady by viewModel.isReady.collectAsStateWithLifecycle()
+    if (!isReady) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().background(colors.background),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item(key = "skeleton_header") {
+                Header(
+                    eyebrow = viewModel.t("ownerTools"),
+                    title = viewModel.t("paymentLedger"),
+                    subtitle = viewModel.t("paymentSubtitle")
+                )
+            }
+            items(3) {
+                CustomerSkeletonItem()
+            }
+        }
+        return
     }
 
     LazyColumn(

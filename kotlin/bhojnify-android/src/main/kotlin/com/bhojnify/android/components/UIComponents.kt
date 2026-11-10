@@ -11,6 +11,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
+import androidx.compose.animation.core.*
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +65,7 @@ fun Header(
             }
             Text(
                 text = title,
+                modifier = Modifier.semantics { heading() },
                 style = MaterialTheme.typography.displaySmall.copy(
                     color = colors.foreground,
                     lineHeight = 32.sp
@@ -72,10 +84,11 @@ fun Header(
         if (onActionClick != null) {
             Box(
                 modifier = Modifier
-                    .size(42.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
                     .background(colors.card)
                     .border(1.dp, colors.border, CircleShape)
+                    .semantics { role = Role.Button }
                     .clickable { onActionClick() },
                 contentAlignment = Alignment.Center
             ) {
@@ -83,7 +96,7 @@ fun Header(
                     imageVector = Icons.Default.Person,
                     contentDescription = actionContentDescription ?: "Profile",
                     tint = colors.foreground,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
@@ -106,6 +119,7 @@ fun SectionHeading(
     ) {
         Text(
             text = title,
+            modifier = Modifier.semantics { heading() },
             style = MaterialTheme.typography.titleMedium.copy(
                 color = colors.foreground
             )
@@ -219,9 +233,11 @@ fun IconTile(
     val colors = BhojnifyTheme.colors
     Box(
         modifier = modifier
+            .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(colors.card)
             .border(1.dp, colors.border, RoundedCornerShape(16.dp))
+            .semantics { role = Role.Button }
             .clickable { onClick() }
             .padding(horizontal = 8.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
@@ -472,5 +488,67 @@ fun EmptyState(
                 )
             )
         }
+    }
+}
+
+val LocalSnackbarHostState = staticCompositionLocalOf<SnackbarHostState> {
+    error("No SnackbarHostState provided")
+}
+
+@Composable
+fun ShimmerBox(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(14.dp)
+) {
+    val colors = BhojnifyTheme.colors
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer_anim"
+    )
+
+    val shimmerColors = listOf(
+        colors.muted,
+        colors.card,
+        colors.muted
+    )
+
+    val brush = Brush.linearGradient(
+        colors = shimmerColors,
+        start = Offset.Zero,
+        end = Offset(x = translateAnim, y = translateAnim)
+    )
+
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(brush)
+    )
+}
+
+@Composable
+fun CustomerSkeletonItem(modifier: Modifier = Modifier) {
+    val colors = BhojnifyTheme.colors
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, colors.border, RoundedCornerShape(16.dp))
+            .background(colors.card)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        ShimmerBox(modifier = Modifier.size(48.dp), shape = CircleShape)
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.6f).height(16.dp))
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.4f).height(12.dp))
+        }
+        ShimmerBox(modifier = Modifier.size(60.dp, 24.dp))
     }
 }

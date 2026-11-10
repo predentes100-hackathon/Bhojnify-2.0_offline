@@ -8,7 +8,9 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -19,6 +21,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.bhojnify.android.components.LocalSnackbarHostState
 import com.bhojnify.android.screens.*
 import com.bhojnify.android.viewmodel.MessViewModel
 
@@ -34,6 +37,7 @@ fun AppNavigator(
     widthSizeClass: WindowWidthSizeClass = WindowWidthSizeClass.Compact
 ) {
     val navController = rememberNavController()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val isReady by viewModel.isReady.collectAsStateWithLifecycle()
     if (!isReady) {
@@ -73,85 +77,93 @@ fun AppNavigator(
         }
     }
 
-    if (isCompact) {
-        Scaffold(
-            contentWindowInsets = WindowInsets.safeDrawing,
-            bottomBar = {
-                if (showNavigation) {
-                    NavigationBar {
-                        items.forEach { item ->
-                            val labelText = viewModel.t(item.labelKey)
-                            NavigationBarItem(
-                                icon = { Icon(item.icon, contentDescription = labelText) },
-                                label = { Text(labelText) },
-                                selected = currentRoute == item.route,
-                                onClick = {
-                                    navController.navigate(item.route) {
-                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
+    CompositionLocalProvider(LocalSnackbarHostState provides snackbarHostState) {
+        if (isCompact) {
+            Scaffold(
+                contentWindowInsets = WindowInsets.safeDrawing,
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+                bottomBar = {
+                    if (showNavigation) {
+                        NavigationBar {
+                            items.forEach { item ->
+                                val labelText = viewModel.t(item.labelKey)
+                                NavigationBarItem(
+                                    icon = { Icon(item.icon, contentDescription = labelText) },
+                                    label = { Text(labelText) },
+                                    selected = currentRoute == item.route,
+                                    onClick = {
+                                        navController.navigate(item.route) {
+                                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }
-            }
-        ) { innerPadding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.TopCenter
-            ) {
+            ) { innerPadding ->
                 Box(
                     modifier = Modifier
-                        .fillMaxHeight()
-                        .widthIn(max = 720.dp)
-                        .fillMaxWidth()
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentAlignment = Alignment.TopCenter
                 ) {
-                    navContent(Modifier.fillMaxSize())
-                }
-            }
-        }
-    } else {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-        ) {
-            if (showNavigation) {
-                NavigationRail {
-                    items.forEach { item ->
-                        val labelText = viewModel.t(item.labelKey)
-                        NavigationRailItem(
-                            icon = { Icon(item.icon, contentDescription = labelText) },
-                            label = { Text(labelText) },
-                            selected = currentRoute == item.route,
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .widthIn(max = 720.dp)
+                            .fillMaxWidth()
+                    ) {
+                        navContent(Modifier.fillMaxSize())
                     }
                 }
             }
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-                contentAlignment = Alignment.TopCenter
-            ) {
-                Box(
+        } else {
+            Scaffold(
+                contentWindowInsets = WindowInsets.safeDrawing,
+                snackbarHost = { SnackbarHost(snackbarHostState) }
+            ) { innerPadding ->
+                Row(
                     modifier = Modifier
-                        .fillMaxHeight()
-                        .widthIn(max = 720.dp)
-                        .fillMaxWidth()
+                        .fillMaxSize()
+                        .padding(innerPadding)
                 ) {
-                    navContent(Modifier.fillMaxSize())
+                    if (showNavigation) {
+                        NavigationRail {
+                            items.forEach { item ->
+                                val labelText = viewModel.t(item.labelKey)
+                                NavigationRailItem(
+                                    icon = { Icon(item.icon, contentDescription = labelText) },
+                                    label = { Text(labelText) },
+                                    selected = currentRoute == item.route,
+                                    onClick = {
+                                        navController.navigate(item.route) {
+                                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .widthIn(max = 720.dp)
+                                .fillMaxWidth()
+                        ) {
+                            navContent(Modifier.fillMaxSize())
+                        }
+                    }
                 }
             }
         }

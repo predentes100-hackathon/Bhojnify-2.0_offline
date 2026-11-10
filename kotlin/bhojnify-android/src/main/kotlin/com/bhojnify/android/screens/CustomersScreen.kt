@@ -43,6 +43,15 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.bhojnify.android.components.*
+import kotlinx.coroutines.launch
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import com.bhojnify.android.components.CustomerSkeletonItem
+import com.bhojnify.android.components.LocalSnackbarHostState
 import com.bhojnify.android.navigation.Routes
 import com.bhojnify.android.theme.BhojnifyTheme
 import com.bhojnify.android.viewmodel.MessViewModel
@@ -60,6 +69,10 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
     val colors = BhojnifyTheme.colors
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = LocalSnackbarHostState.current
+    val haptics = LocalHapticFeedback.current
+    var customerToDelete by remember { mutableStateOf<Customer?>(null) }
 
     val customers = state.customers
     val todayStr = DateUtils.todayString()
@@ -205,6 +218,27 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                 )
             }
         }
+    }
+
+    val isReady by viewModel.isReady.collectAsStateWithLifecycle()
+    if (!isReady) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().background(colors.background),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            item(key = "skeleton_header") {
+                Header(
+                    eyebrow = viewModel.t("ownerTools"),
+                    title = viewModel.t("customers"),
+                    subtitle = viewModel.t("customerListSubtitle")
+                )
+            }
+            items(3) {
+                CustomerSkeletonItem()
+            }
+        }
+        return
     }
 
     Box(
@@ -580,8 +614,20 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                             context.startActivity(intent)
                         },
                         onRenewClick = {
+                            val prevCustomer = customer
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                             viewModel.renewCustomerPlan(customer.id)
-                            Toast.makeText(context, viewModel.t("planRenewedSuccess"), Toast.LENGTH_SHORT).show()
+                            scope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = viewModel.t("planRenewedFor", mapOf("name" to customer.name)),
+                                    actionLabel = viewModel.t("undo"),
+                                    duration = SnackbarDuration.Short
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    viewModel.updateCustomer(prevCustomer.id, prevCustomer)
+                                    snackbarHostState.showSnackbar(viewModel.t("planRenewalUndone"))
+                                }
+                            }
                         }
                     )
                 }
@@ -939,11 +985,10 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
 
                         Button(
                             onClick = {
-                                viewModel.deleteCustomer(customer.id)
-                                Toast.makeText(context, viewModel.t("customerRemoved"), Toast.LENGTH_SHORT).show()
+                                customerToDelete = customer
                                 selectedCustomerForDetails = null
                             },
-                            modifier = Modifier.fillMaxWidth().height(44.dp),
+                            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.destructive, contentColor = colors.destructiveForeground),
                             shape = RoundedCornerShape(13.dp)
                         ) {
@@ -1002,6 +1047,37 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                 }
             }
         }
+    }
+
+
+    if (customerToDelete != null) {
+        val toDel = customerToDelete!!
+        AlertDialog(
+            onDismissRequest = { customerToDelete = null },
+            title = { Text(viewModel.t("deleteCustomer"), fontWeight = FontWeight.Bold) },
+            text = {
+                Text("${viewModel.t("deleteCustomerConfirm")} (${toDel.name})\n\n${viewModel.t("deleteCustomerConfirmDetail")}")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.deleteCustomer(toDel.id)
+                        scope.launch {
+                            snackbarHostState.showSnackbar(viewModel.t("customerRemoved"))
+                        }
+                        customerToDelete = null
+                    }
+                ) {
+                    Text(viewModel.t("delete"), color = colors.destructive, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { customerToDelete = null }) {
+                    Text(viewModel.t("cancel"), fontWeight = FontWeight.Bold)
+                }
+            }
+        )
     }
 
     // MARK AS PAID DIALOG
@@ -1108,6 +1184,9 @@ fun CustomerRow(
     modifier: Modifier = Modifier
 ) {
     val colors = BhojnifyTheme.colors
+    val rowDescription = remember(customer, expiryInfo, localizedPaymentStatus) {
+        "${customer.name}, ${customer.plan}, $label, $localizedPaymentStatus, phone ${customer.phone}"
+    }
 
     Column(
         modifier = modifier
@@ -1115,6 +1194,9 @@ fun CustomerRow(
             .clip(RoundedCornerShape(18.dp))
             .border(1.dp, colors.border, RoundedCornerShape(18.dp))
             .background(colors.card)
+            .semantics(mergeDescendants = true) {
+                contentDescription = rowDescription
+            }
             .clickable { onCustomerClick() }
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -1178,7 +1260,7 @@ fun CustomerRow(
             // Call Button
             Button(
                 onClick = onCallClick,
-                modifier = Modifier.weight(1f).height(34.dp),
+                modifier = Modifier.weight(1f).defaultMinSize(minHeight = 48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.secondary, contentColor = colors.primary),
                 shape = RoundedCornerShape(10.dp),
                 contentPadding = PaddingValues(horizontal = 8.dp)
@@ -1191,7 +1273,7 @@ fun CustomerRow(
             // WhatsApp Button
             Button(
                 onClick = onWhatsAppClick,
-                modifier = Modifier.weight(1f).height(34.dp),
+                modifier = Modifier.weight(1f).defaultMinSize(minHeight = 48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE8F5E9), contentColor = Color(0xFF2E7D32)),
                 shape = RoundedCornerShape(10.dp),
                 contentPadding = PaddingValues(horizontal = 8.dp)
@@ -1204,7 +1286,7 @@ fun CustomerRow(
             // Renew Button
             Button(
                 onClick = onRenewClick,
-                modifier = Modifier.weight(1f).height(34.dp),
+                modifier = Modifier.weight(1f).defaultMinSize(minHeight = 48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = colors.primaryForeground),
                 shape = RoundedCornerShape(10.dp),
                 contentPadding = PaddingValues(horizontal = 8.dp)

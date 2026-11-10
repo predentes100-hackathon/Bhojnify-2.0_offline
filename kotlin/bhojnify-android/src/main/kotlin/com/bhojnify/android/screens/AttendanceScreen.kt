@@ -27,6 +27,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.bhojnify.android.components.*
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import com.bhojnify.android.theme.BhojnifyTheme
 import com.bhojnify.android.viewmodel.MessViewModel
 import com.bhojnify.core.model.Meal
@@ -37,6 +42,7 @@ fun AttendanceScreen(navController: NavController, viewModel: MessViewModel) {
     val colors = BhojnifyTheme.colors
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
 
     val today = DateUtils.todayString()
     val customers = state.customers
@@ -130,9 +136,14 @@ fun AttendanceScreen(navController: NavController, viewModel: MessViewModel) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
+                        .defaultMinSize(minHeight = 48.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(if (isSelected) colors.primary else Color.Transparent)
-                        .clickable { selectedMeal = meal }
+                        .semantics { role = Role.Tab }
+                        .clickable {
+                            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            selectedMeal = meal
+                        }
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -197,6 +208,7 @@ fun AttendanceScreen(navController: NavController, viewModel: MessViewModel) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
+                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 selected = if (isMarked) {
                                     (selected - customer.id).toMutableSet()
                                 } else {
@@ -259,6 +271,7 @@ fun AttendanceScreen(navController: NavController, viewModel: MessViewModel) {
                 label = "Save ${selectedMeal.displayName} Attendance (${selected.size})",
                 icon = Icons.Default.Save,
                 onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                     val toAdd = selected.toList()
                     val toRemove = (markedToday - selected.toSet()).toList()
 
