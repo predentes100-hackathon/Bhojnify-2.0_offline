@@ -1,5 +1,15 @@
 package com.bhojnify.android.screens
 
+import com.bhojnify.core.model.Customer
+import com.bhojnify.core.model.LeaveRequest
+import com.bhojnify.core.model.LeaveStatus
+import com.bhojnify.core.service.DateUtils
+
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,13 +34,12 @@ import com.bhojnify.android.components.*
 import com.bhojnify.android.navigation.Routes
 import com.bhojnify.android.theme.BhojnifyTheme
 import com.bhojnify.android.viewmodel.MessViewModel
-import com.bhojnify.core.model.LeaveStatus
 import java.time.LocalDate
 
 @Composable
 fun LeaveScreen(navController: NavController, viewModel: MessViewModel) {
     val colors = BhojnifyTheme.colors
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     val customers = state.customers
@@ -72,90 +81,98 @@ fun LeaveScreen(navController: NavController, viewModel: MessViewModel) {
         }
     }
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .background(colors.background)
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+            .imePadding(),
+        contentPadding = PaddingValues(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Header(
-            eyebrow = viewModel.t("ownerTools"),
-            title = viewModel.t("leaveTitle"),
-            subtitle = viewModel.t("leaveSubtitle"),
-            onActionClick = { navController.navigate(Routes.ADMIN) }
-        )
-
-        // Summary Card
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(18.dp))
-                .background(colors.secondary)
-                .padding(16.dp),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Icon(Icons.Default.DateRange, null, tint = colors.primary, modifier = Modifier.size(22.dp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = viewModel.t("requestWaiting", mapOf("count" to pendingLeaves.size, "plural" to if (pendingLeaves.size == 1) "" else "s")),
-                    color = colors.primary,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = viewModel.t("approvedLeaveDetail"),
-                    color = colors.secondaryForeground,
-                    fontSize = 12.sp,
-                    lineHeight = 18.sp
-                )
-            }
+        item(key = "header") {
+            Header(
+                eyebrow = viewModel.t("ownerTools"),
+                title = viewModel.t("leaveTitle"),
+                subtitle = viewModel.t("leaveSubtitle"),
+                actionContentDescription = viewModel.t("profile"),
+                onActionClick = { navController.navigate(Routes.ADMIN) }
+            )
         }
 
-        PrimaryButton(
-            label = if (showForm) viewModel.t("cancel") else viewModel.t("addLeave"),
-            icon = if (showForm) Icons.Default.Close else Icons.Default.Add,
-            onClick = {
-                if (showForm) resetForm()
-                else {
-                    resetForm()
-                    showForm = true
-                }
-            }
-        )
-
-        // Complete Leave Confirmation
-        if (completingLeaveId != null) {
-            Column(
+        item(key = "summary_card") {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(18.dp))
-                    .border(1.5.dp, colors.primary, RoundedCornerShape(18.dp))
-                    .background(colors.card)
+                    .background(colors.secondary)
                     .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(Icons.Default.CheckCircle, null, tint = colors.primary, modifier = Modifier.size(22.dp))
-                    Text(text = viewModel.t("completeLeave"), color = colors.foreground, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Icon(Icons.Default.DateRange, null, tint = colors.primary, modifier = Modifier.size(22.dp))
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = viewModel.t("requestWaiting", mapOf("count" to pendingLeaves.size, "plural" to if (pendingLeaves.size == 1) "" else "s")),
+                        color = colors.primary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = viewModel.t("approvedLeaveDetail"),
+                        color = colors.secondaryForeground,
+                        fontSize = 12.sp,
+                        lineHeight = 18.sp
+                    )
                 }
-                Text(text = viewModel.t("autoExtendSub"), color = colors.mutedForeground, fontSize = 12.sp, lineHeight = 17.sp)
-                FormField(label = viewModel.t("returnDate"), value = returnDateInput, onValueChange = { returnDateInput = it }, placeholder = "YYYY-MM-DD")
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.align(Alignment.End)) {
-                    OutlinedButton(onClick = { completingLeaveId = null }) {
-                        Text(text = viewModel.t("cancel"))
+            }
+        }
+
+        item(key = "action_btn") {
+            PrimaryButton(
+                label = if (showForm) viewModel.t("cancel") else viewModel.t("addLeave"),
+                icon = if (showForm) Icons.Default.Close else Icons.Default.Add,
+                onClick = {
+                    if (showForm) resetForm()
+                    else {
+                        resetForm()
+                        showForm = true
                     }
-                    Button(
-                        onClick = {
-                            viewModel.completeLeave(completingLeaveId!!, returnDateInput.trim())
-                            completingLeaveId = null
-                            Toast.makeText(context, viewModel.t("planExtendedNotice"), Toast.LENGTH_SHORT).show()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = colors.primary)
-                    ) {
-                        Text(text = viewModel.t("confirmReturn"))
+                }
+            )
+        }
+
+        // Complete Leave Confirmation
+        if (completingLeaveId != null) {
+            item(key = "completing_leave") {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(18.dp))
+                        .border(1.5.dp, colors.primary, RoundedCornerShape(18.dp))
+                        .background(colors.card)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Default.CheckCircle, null, tint = colors.primary, modifier = Modifier.size(22.dp))
+                        Text(text = viewModel.t("completeLeave"), color = colors.foreground, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Text(text = viewModel.t("autoExtendSub"), color = colors.mutedForeground, fontSize = 12.sp, lineHeight = 17.sp)
+                    FormField(label = viewModel.t("returnDate"), value = returnDateInput, onValueChange = { returnDateInput = it }, placeholder = "YYYY-MM-DD")
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.align(Alignment.End)) {
+                        OutlinedButton(onClick = { completingLeaveId = null }) {
+                            Text(text = viewModel.t("cancel"))
+                        }
+                        Button(
+                            onClick = {
+                                viewModel.completeLeave(completingLeaveId!!, returnDateInput.trim())
+                                completingLeaveId = null
+                                Toast.makeText(context, viewModel.t("planExtendedNotice"), Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = colors.primary)
+                        ) {
+                            Text(text = viewModel.t("confirmReturn"))
+                        }
                     }
                 }
             }
@@ -163,173 +180,191 @@ fun LeaveScreen(navController: NavController, viewModel: MessViewModel) {
 
         // Form Card
         if (showForm) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .border(1.dp, colors.border, RoundedCornerShape(20.dp))
-                    .background(colors.card)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(15.dp)
-            ) {
-                Text(
-                    text = if (editingLeaveId != null) viewModel.t("editLeaveTitle") else viewModel.t("addLeaveTitle"),
-                    color = colors.foreground,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            item(key = "form_card") {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .border(1.dp, colors.border, RoundedCornerShape(20.dp))
+                        .background(colors.card)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(15.dp)
+                ) {
+                    Text(
+                        text = if (editingLeaveId != null) viewModel.t("editLeaveTitle") else viewModel.t("addLeaveTitle"),
+                        color = colors.foreground,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold
+                    )
 
-                Text(text = viewModel.t("selectCustomer"), color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    customers.forEach { customer ->
-                        val isSelected = customerId == customer.id
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .border(1.dp, if (isSelected) colors.primary else colors.border, RoundedCornerShape(13.dp))
-                                .background(if (isSelected) colors.secondary else colors.background)
-                                .clickable { customerId = customer.id }
-                                .padding(12.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                modifier = Modifier.fillMaxWidth()
+                    Text(text = viewModel.t("selectCustomer"), color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        customers.forEach { customer ->
+                            val isSelected = customerId == customer.id
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(1.dp, if (isSelected) colors.primary else colors.border, RoundedCornerShape(13.dp))
+                                    .background(if (isSelected) colors.secondary else colors.background)
+                                    .clickable { customerId = customer.id }
+                                    .padding(12.dp)
                             ) {
-                                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                    Text(text = customer.name, color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                    Text(text = "${customer.plan} · ${viewModel.localized(customer.paymentStatus.displayName)}", color = colors.mutedForeground, fontSize = 10.sp)
-                                }
-                                Icon(
-                                    if (isSelected) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                                    null,
-                                    tint = if (isSelected) colors.primary else colors.mutedForeground
-                                )
-                            }
-                        }
-                    }
-                }
-
-                FormField(label = viewModel.t("leaveFrom"), value = from, onValueChange = { from = it }, placeholder = "YYYY-MM-DD")
-                FormField(label = viewModel.t("leaveToOptional"), value = to, onValueChange = { to = it }, placeholder = viewModel.t("leaveToPlaceholder"))
-                FormField(label = viewModel.t("leaveNoteOptional"), value = note, onValueChange = { note = it }, placeholder = viewModel.t("enterLeaveNote"))
-
-                PrimaryButton(
-                    label = if (editingLeaveId != null) viewModel.t("saveChanges") else viewModel.t("saveLeave"),
-                    icon = Icons.Default.Check,
-                    onClick = saveLeave,
-                    disabled = customers.isEmpty()
-                )
-            }
-        }
-
-        SectionHeading(title = viewModel.t("allRequests"))
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(19.dp))
-                .border(1.dp, colors.border, RoundedCornerShape(19.dp))
-                .background(colors.card)
-                .padding(horizontal = 14.dp)
-        ) {
-            if (leaves.isNotEmpty()) {
-                leaves.forEach { leave ->
-                    val customer = customers.find { it.id == leave.customerId }
-                    val isOngoing = leave.to == null
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 14.dp),
-                        verticalAlignment = Alignment.Top,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(text = customer?.name ?: viewModel.t("memberLeave"), color = colors.foreground, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                if (isOngoing) {
-                                    Badge(label = viewModel.t("holidayPending"), tone = BadgeTone.AMBER)
-                                } else {
-                                    Badge(
-                                        label = viewModel.localized(leave.status.displayName),
-                                        tone = if (leave.status == LeaveStatus.APPROVED) BadgeTone.GREEN else BadgeTone.RED
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                        Text(text = customer.name, color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                        Text(text = "${customer.plan} · ${viewModel.localized(customer.paymentStatus.displayName)}", color = colors.mutedForeground, fontSize = 10.sp)
+                                    }
+                                    Icon(
+                                        if (isSelected) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                                        null,
+                                        tint = if (isSelected) colors.primary else colors.mutedForeground
                                     )
                                 }
                             }
-
-                            Text(
-                                text = "${leave.from} – ${leave.to ?: viewModel.t("returnPending")}",
-                                color = colors.foreground,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            if (leave.reason.isNotEmpty()) {
-                                Text(text = leave.reason, color = colors.mutedForeground, fontSize = 12.sp)
-                            }
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (isOngoing) {
-                                    Button(
-                                        onClick = {
-                                            completingLeaveId = leave.id
-                                            returnDateInput = todayStr
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = colors.primary),
-                                        shape = RoundedCornerShape(10.dp),
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp)
-                                    ) {
-                                        Text(text = viewModel.t("completeHoliday"), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                } else if (leave.status == LeaveStatus.PENDING) {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        IconButton(onClick = { viewModel.updateLeaveStatus(leave.id, LeaveStatus.APPROVED) }) {
-                                            Icon(Icons.Default.Check, null, tint = colors.primary)
-                                        }
-                                        IconButton(onClick = { viewModel.updateLeaveStatus(leave.id, LeaveStatus.DECLINED) }) {
-                                            Icon(Icons.Default.Close, null, tint = colors.destructive)
-                                        }
-                                    }
-                                }
-
-                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    IconButton(
-                                        onClick = {
-                                            editingLeaveId = leave.id
-                                            customerId = leave.customerId ?: ""
-                                            from = leave.from
-                                            to = leave.to ?: ""
-                                            note = leave.reason
-                                            showForm = true
-                                        }
-                                    ) {
-                                        Icon(Icons.Default.Edit, null, tint = colors.primary, modifier = Modifier.size(16.dp))
-                                    }
-                                    IconButton(onClick = { viewModel.deleteLeave(leave.id) }) {
-                                        Icon(Icons.Default.Delete, null, tint = colors.destructive, modifier = Modifier.size(16.dp))
-                                    }
-                                }
-                            }
                         }
                     }
+
+                    FormField(label = viewModel.t("leaveFrom"), value = from, onValueChange = { from = it }, placeholder = "YYYY-MM-DD")
+                    FormField(label = viewModel.t("leaveToOptional"), value = to, onValueChange = { to = it }, placeholder = viewModel.t("leaveToPlaceholder"))
+                    FormField(label = viewModel.t("leaveNoteOptional"), value = note, onValueChange = { note = it }, placeholder = viewModel.t("enterLeaveNote"))
+
+                    PrimaryButton(
+                        label = if (editingLeaveId != null) viewModel.t("saveChanges") else viewModel.t("saveLeave"),
+                        icon = Icons.Default.Check,
+                        onClick = saveLeave,
+                        disabled = customers.isEmpty()
+                    )
                 }
-            } else {
-                Text(
-                    text = viewModel.t("noLeaveRequests"),
-                    color = colors.mutedForeground,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(vertical = 16.dp)
+            }
+        }
+
+        item(key = "requests_heading") {
+            SectionHeading(title = viewModel.t("allRequests"))
+        }
+
+        if (leaves.isEmpty()) {
+            item(key = "empty_state") {
+                EmptyState(
+                    icon = Icons.Default.DateRange,
+                    title = viewModel.t("noLeaveRequests"),
+                    detail = viewModel.t("caughtUpLeave")
                 )
+            }
+        } else {
+            items(leaves, key = { it.id }) { leave ->
+                val customer = customers.find { it.id == leave.customerId }
+                LeaveRow(
+                    leave = leave,
+                    customer = customer,
+                    pendingLabel = viewModel.t("holidayPending"),
+                    statusLabel = viewModel.localized(leave.status.displayName),
+                    memberLeaveLabel = viewModel.t("memberLeave"),
+                    completeLabel = viewModel.t("completeHoliday"),
+                    onCompleteClick = {
+                        completingLeaveId = leave.id
+                        returnDateInput = DateUtils.todayString()
+                    },
+                    onEditClick = {
+                        editingLeaveId = leave.id
+                        customerId = leave.customerId ?: (customers.firstOrNull()?.id ?: "")
+                        from = leave.from
+                        to = leave.to ?: ""
+                        note = leave.reason
+                        showForm = true
+                    },
+                    onDeleteClick = {
+                        viewModel.deleteLeave(leave.id)
+                        Toast.makeText(context, viewModel.t("leaveDeleted"), Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun LeaveRow(
+    leave: LeaveRequest,
+    customer: Customer?,
+    pendingLabel: String,
+    statusLabel: String,
+    memberLeaveLabel: String,
+    completeLabel: String,
+    onCompleteClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = BhojnifyTheme.colors
+    val isOngoing = leave.to == null
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, colors.border, RoundedCornerShape(16.dp))
+            .background(colors.card)
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = customer?.name ?: memberLeaveLabel, color = colors.foreground, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    if (isOngoing) {
+                        Badge(label = pendingLabel, tone = BadgeTone.AMBER)
+                    } else {
+                        Badge(
+                            label = statusLabel,
+                            tone = if (leave.status == LeaveStatus.APPROVED) BadgeTone.GREEN else BadgeTone.RED
+                        )
+                    }
+                }
+                Text(
+                    text = "${leave.from} → ${leave.to ?: "..."}",
+                    color = colors.mutedForeground,
+                    fontSize = 11.sp
+                )
+                if (leave.reason.isNotBlank()) {
+                    Text(
+                        text = leave.reason,
+                        color = colors.foreground,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (isOngoing) {
+                TextButton(onClick = onCompleteClick) {
+                    Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp), tint = colors.primary)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = completeLabel, color = colors.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            IconButton(onClick = onEditClick) {
+                Icon(Icons.Default.Edit, null, tint = colors.mutedForeground, modifier = Modifier.size(17.dp))
+            }
+            IconButton(onClick = onDeleteClick) {
+                Icon(Icons.Default.Delete, null, tint = colors.mutedForeground, modifier = Modifier.size(17.dp))
             }
         }
     }

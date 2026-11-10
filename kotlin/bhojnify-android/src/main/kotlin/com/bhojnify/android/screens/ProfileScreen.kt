@@ -1,5 +1,7 @@
 package com.bhojnify.android.screens
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,7 +40,7 @@ import com.bhojnify.core.i18n.Language
 @Composable
 fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
     val colors = BhojnifyTheme.colors
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
 

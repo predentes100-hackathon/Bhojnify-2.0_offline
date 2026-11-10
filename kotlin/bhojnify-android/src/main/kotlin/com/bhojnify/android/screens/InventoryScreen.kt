@@ -1,5 +1,10 @@
 package com.bhojnify.android.screens
 
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,7 +35,7 @@ import java.time.LocalDate
 @Composable
 fun InventoryScreen(navController: NavController, viewModel: MessViewModel) {
     val colors = BhojnifyTheme.colors
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     val inventory = state.inventory
@@ -67,173 +72,103 @@ fun InventoryScreen(navController: NavController, viewModel: MessViewModel) {
 
     val lowStockCount = inventory.count { it.quantity <= it.minimum }
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .background(colors.background)
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+            .imePadding(),
+        contentPadding = PaddingValues(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Header(
-            eyebrow = viewModel.t("ownerTools"),
-            title = viewModel.t("inventoryLedger"),
-            subtitle = viewModel.t("stayAhead"),
-            onActionClick = { navController.navigate(Routes.PROFILE) }
-        )
+        item(key = "header") {
+            Header(
+                eyebrow = viewModel.t("ownerTools"),
+                title = viewModel.t("inventoryLedger"),
+                subtitle = viewModel.t("stayAhead"),
+                actionContentDescription = viewModel.t("profile"),
+                onActionClick = { navController.navigate(Routes.PROFILE) }
+            )
+        }
 
         if (lowStockCount > 0) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(15.dp))
-                    .background(colors.accent)
-                    .padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(9.dp)
-            ) {
-                Icon(Icons.Default.Warning, null, tint = colors.accentForeground, modifier = Modifier.size(20.dp))
-                Text(
-                    text = viewModel.t("itemBelowMinimum", mapOf("count" to lowStockCount)),
-                    color = colors.accentForeground,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            item(key = "low_stock_banner") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(15.dp))
+                        .background(colors.accent)
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(9.dp)
+                ) {
+                    Icon(Icons.Default.Warning, null, tint = colors.accentForeground, modifier = Modifier.size(20.dp))
+                    Text(
+                        text = viewModel.t("itemBelowMinimum", mapOf("count" to lowStockCount)),
+                        color = colors.accentForeground,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
 
-        SectionHeading(title = viewModel.t("currentStock"))
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(19.dp))
-                .border(1.dp, colors.border, RoundedCornerShape(19.dp))
-                .background(colors.card)
-                .padding(horizontal = 14.dp)
-        ) {
-            if (inventory.isNotEmpty()) {
-                inventory.forEach { item ->
-                    val low = item.quantity <= item.minimum
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 13.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (low) colors.accent else colors.secondary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.Inventory,
-                                null,
-                                tint = if (low) colors.accentForeground else colors.primary,
-                                modifier = Modifier.size(19.dp)
-                            )
-                        }
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text(text = item.name, color = colors.foreground, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            Text(
-                                text = "${viewModel.localized(item.category)} · ${viewModel.t("minimum")} ${item.minimum} ${item.unit}",
-                                color = colors.mutedForeground,
-                                fontSize = 11.sp
-                            )
-                        }
-                        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                            Text(
-                                text = "${item.quantity} ${item.unit}",
-                                color = if (low) colors.destructive else colors.foreground,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Badge(label = if (low) viewModel.t("low") else viewModel.t("good"), tone = if (low) BadgeTone.AMBER else BadgeTone.GREEN)
-                        }
-                        IconButton(onClick = { viewModel.removeInventory(item.id) }) {
-                            Icon(Icons.Default.Delete, null, tint = colors.mutedForeground, modifier = Modifier.size(17.dp))
-                        }
-                    }
-                }
-            } else {
+        item(key = "stock_heading") {
+            SectionHeading(title = viewModel.t("currentStock"))
+        }
+
+        if (inventory.isEmpty()) {
+            item(key = "empty_inventory") {
                 EmptyState(
                     icon = Icons.Default.Inventory,
                     title = viewModel.t("noInventoryItems"),
                     detail = viewModel.t("noInventoryItemsDetail")
                 )
             }
-        }
-
-        SectionHeading(title = viewModel.t("activeReminders"), action = "${reminders.size}")
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(19.dp))
-                .border(1.dp, colors.border, RoundedCornerShape(19.dp))
-                .background(colors.card)
-                .padding(horizontal = 14.dp)
-        ) {
-            if (reminders.isNotEmpty()) {
-                reminders.forEach { reminder ->
-                    val due = reminder.dueDate <= currentDate
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 13.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (due) colors.accent else colors.secondary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.Notifications,
-                                null,
-                                tint = if (due) colors.accentForeground else colors.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text(text = reminder.title, color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                            Text(
-                                text = "${reminder.detail} · ${if (due) viewModel.t("dueNow") else reminder.dueDate}",
-                                color = colors.mutedForeground,
-                                fontSize = 11.sp
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (due) colors.accent else colors.secondary)
-                                .clickable { viewModel.resolveReminder(reminder.id) }
-                                .padding(horizontal = 10.dp, vertical = 8.dp)
-                        ) {
-                            Text(
-                                text = viewModel.t("resolve"),
-                                color = if (due) colors.accentForeground else colors.primary,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            } else {
-                Text(
-                    text = viewModel.t("noActiveReminders"),
-                    color = colors.mutedForeground,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(vertical = 16.dp)
+        } else {
+            items(inventory, key = { it.id }) { item ->
+                val low = item.quantity <= item.minimum
+                InventoryRow(
+                    item = item,
+                    low = low,
+                    categoryLabel = viewModel.localized(item.category),
+                    minLabel = viewModel.t("minimum"),
+                    statusLabel = if (low) viewModel.t("low") else viewModel.t("good"),
+                    onDeleteClick = { viewModel.removeInventory(item.id) }
                 )
             }
         }
 
-        SectionHeading(title = viewModel.t("addStockItem"))
+        item(key = "reminders_heading") {
+            SectionHeading(title = viewModel.t("activeReminders"), action = "${reminders.size}")
+        }
+
+        if (reminders.isEmpty()) {
+            item(key = "empty_reminders") {
+                Text(
+                    text = viewModel.t("noActiveReminders"),
+                    color = colors.mutedForeground,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(vertical = 12.dp)
+                )
+            }
+        } else {
+            items(reminders, key = { it.id }) { reminder ->
+                val due = reminder.dueDate <= currentDate
+                ReminderRow(
+                    reminder = reminder,
+                    due = due,
+                    dueNowLabel = viewModel.t("dueNow"),
+                    resolveLabel = viewModel.t("resolve"),
+                    onResolveClick = { viewModel.resolveReminder(reminder.id) }
+                )
+            }
+        }
+
+        item(key = "add_stock_heading") {
+            SectionHeading(title = viewModel.t("addStockItem"))
+        }
+
+        item(key = "add_stock_card") {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -282,6 +217,126 @@ fun InventoryScreen(navController: NavController, viewModel: MessViewModel) {
             }
 
             PrimaryButton(label = viewModel.t("addToLedger"), icon = Icons.Default.Add, onClick = add)
+        }
+        }
+    }
+}
+
+@Composable
+fun InventoryRow(
+    item: com.bhojnify.core.model.InventoryItem,
+    low: Boolean,
+    categoryLabel: String,
+    minLabel: String,
+    statusLabel: String,
+    onDeleteClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = BhojnifyTheme.colors
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, colors.border, RoundedCornerShape(16.dp))
+            .background(colors.card)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (low) colors.accent else colors.secondary),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Default.Inventory,
+                null,
+                tint = if (low) colors.accentForeground else colors.primary,
+                modifier = Modifier.size(19.dp)
+            )
+        }
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(text = item.name, color = colors.foreground, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(
+                text = "$categoryLabel · $minLabel ${item.minimum} ${item.unit}",
+                color = colors.mutedForeground,
+                fontSize = 11.sp
+            )
+        }
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Text(
+                text = "${item.quantity} ${item.unit}",
+                color = if (low) colors.destructive else colors.foreground,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Badge(label = statusLabel, tone = if (low) BadgeTone.AMBER else BadgeTone.GREEN)
+        }
+        IconButton(onClick = onDeleteClick) {
+            Icon(Icons.Default.Delete, null, tint = colors.mutedForeground, modifier = Modifier.size(17.dp))
+        }
+    }
+}
+
+@Composable
+fun ReminderRow(
+    reminder: com.bhojnify.core.model.Reminder,
+    due: Boolean,
+    dueNowLabel: String,
+    resolveLabel: String,
+    onResolveClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = BhojnifyTheme.colors
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, colors.border, RoundedCornerShape(16.dp))
+            .background(colors.card)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (due) colors.accent else colors.secondary),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Default.Notifications,
+                null,
+                tint = if (due) colors.accentForeground else colors.primary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(text = reminder.title, color = colors.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text(
+                text = "${reminder.detail} · ${if (due) dueNowLabel else reminder.dueDate}",
+                color = colors.mutedForeground,
+                fontSize = 11.sp
+            )
+        }
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(if (due) colors.accent else colors.secondary)
+                .clickable { onResolveClick() }
+                .padding(horizontal = 10.dp, vertical = 8.dp)
+        ) {
+            Text(
+                text = resolveLabel,
+                color = if (due) colors.accentForeground else colors.primary,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

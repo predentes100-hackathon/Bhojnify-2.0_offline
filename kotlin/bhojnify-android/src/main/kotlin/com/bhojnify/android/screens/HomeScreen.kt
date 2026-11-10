@@ -1,5 +1,7 @@
 package com.bhojnify.android.screens
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -32,7 +33,7 @@ import java.time.LocalDate
 @Composable
 fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
     val colors = BhojnifyTheme.colors
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     val profile = state.profile
     val inventory = state.inventory
@@ -42,23 +43,21 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
     val reminders = state.reminders
     val customers = state.customers
 
-    val lowStock = inventory.filter { it.quantity <= it.minimum }
-    val revenue = payments.sumOf { it.amount }
-    val spend = expenses.sumOf { it.amount }
-    val currentDate = LocalDate.now().toString()
-    val dueReminders = reminders.filter { it.dueDate <= currentDate }
+    val todayLabel = remember { DateUtils.todayString() }
+    val currentDate = remember { LocalDate.now().toString() }
 
-    val todayLabel = DateUtils.todayString()
+    val lowStock = remember(inventory) { inventory.filter { it.quantity <= it.minimum } }
+    val revenue = remember(payments) { payments.sumOf { it.amount } }
+    val spend = remember(expenses) { expenses.sumOf { it.amount } }
+    val dueReminders = remember(reminders, currentDate) { reminders.filter { it.dueDate <= currentDate } }
 
-    // Today's attendance stats
-    val todayAttendance = attendance.filter { it.date == todayLabel }
-    val todayMealsCount = todayAttendance.size
-    val activeCustomerCount = customers.count { !DateUtils.getExpiryInfo(it.expiryDate).isExpired }
-    val todayAttendanceRate = if (activeCustomerCount > 0)
-        (todayMealsCount * 100) / (activeCustomerCount * 3) // 3 meals/day max
-    else 0
+    val todayMealsCount = remember(attendance, todayLabel) { attendance.count { it.date == todayLabel } }
+    val activeCustomerCount = remember(customers) { customers.count { !DateUtils.getExpiryInfo(it.expiryDate).isExpired } }
+    val todayAttendanceRate = remember(activeCustomerCount, todayMealsCount) {
+        if (activeCustomerCount > 0) (todayMealsCount * 100) / (activeCustomerCount * 3) else 0
+    }
 
-    val expiringCustomers = reactToCustomers(customers)
+    val expiringCustomers = remember(customers, todayLabel) { reactToCustomers(customers, todayLabel) }
 
     Column(
         modifier = Modifier
@@ -281,8 +280,7 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
 }
 
 // Temporary calculation logic port for UI
-private fun reactToCustomers(customers: List<com.bhojnify.core.model.Customer>): List<Pair<com.bhojnify.core.model.Customer, com.bhojnify.core.model.ExpiryInfo>> {
-    val today = DateUtils.todayString()
+private fun reactToCustomers(customers: List<com.bhojnify.core.model.Customer>, today: String): List<Pair<com.bhojnify.core.model.Customer, com.bhojnify.core.model.ExpiryInfo>> {
     return customers.map {
         it to DateUtils.getExpiryInfo(it.expiryDate, today)
     }.filter { it.second.isExpiringSoon || it.second.isExpired }

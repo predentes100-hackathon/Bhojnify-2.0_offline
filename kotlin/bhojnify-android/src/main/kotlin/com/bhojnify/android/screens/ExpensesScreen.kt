@@ -1,5 +1,12 @@
 package com.bhojnify.android.screens
 
+import com.bhojnify.core.model.Expense
+
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -225,7 +232,7 @@ private fun ExpensePieChart(
 @Composable
 fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
     val colors = BhojnifyTheme.colors
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     val expenses = state.expenses
@@ -269,127 +276,93 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
         }
     }
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .background(colors.background)
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+            .imePadding(),
+        contentPadding = PaddingValues(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Header(
-            eyebrow = viewModel.t("ownerTools"),
-            title = viewModel.t("expensesTitle"),
-            subtitle = viewModel.t("expensesSubtitle"),
-            onActionClick = { navController.navigate(Routes.PROFILE) }
-        )
-
-        // ── Total hero card ──────────────────────────────────────────────
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(21.dp))
-                .background(colors.foreground)
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(
-                    text = viewModel.t("septemberSpend").uppercase(),
-                    color = colors.card.copy(alpha = 0.68f),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.3.sp
-                )
-                Text(
-                    text = "₹${"%,.0f".format(totalSpend)}",
-                    color = colors.card,
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 5.dp)
-                )
-            }
-            Icon(Icons.Default.TrendingDown, null, tint = colors.accent, modifier = Modifier.size(30.dp))
-        }
-
-        // ── Pie chart (only when there are expenses) ─────────────────────
-        if (expenses.isNotEmpty()) {
-            SectionHeading(title = viewModel.t("spendingBreakdown"))
-            ExpensePieChart(
-                slices = categoryTotals,
-                total = totalSpend,
-                breakdownTitle = viewModel.t("breakdown"),
-                modifier = Modifier.fillMaxWidth()
+        item(key = "header") {
+            Header(
+                eyebrow = viewModel.t("ownerTools"),
+                title = viewModel.t("expensesTitle"),
+                subtitle = viewModel.t("expensesSubtitle"),
+                actionContentDescription = viewModel.t("profile"),
+                onActionClick = { navController.navigate(Routes.PROFILE) }
             )
         }
 
-        // ── Expense list ─────────────────────────────────────────────────
-        SectionHeading(title = viewModel.t("recentExpenses"))
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(19.dp))
-                .border(1.dp, colors.border, RoundedCornerShape(19.dp))
-                .background(colors.card)
-                .padding(horizontal = 14.dp)
-        ) {
-            if (expenses.isNotEmpty()) {
-                expenses.forEach { expense ->
-                    val sliceIndex = categoryTotals.indexOfFirst { it.first == expense.category }
-                    val dotColor = if (sliceIndex >= 0) colorForIndex(sliceIndex) else colors.primary
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 13.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(dotColor.copy(alpha = 0.15f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            val icon = when (expense.category) {
-                                "Gas" -> Icons.Default.LocalFireDepartment
-                                "Maintenance" -> Icons.Default.Build
-                                "Electricity" -> Icons.Default.ElectricBolt
-                                "Water" -> Icons.Default.WaterDrop
-                                "Grocery" -> Icons.Default.ShoppingBasket
-                                "Salary" -> Icons.Default.People
-                                "Rent" -> Icons.Default.Home
-                                "Packaging" -> Icons.Default.Inventory2
-                                else -> Icons.Default.ShoppingCart
-                            }
-                            Icon(icon, null, tint = dotColor, modifier = Modifier.size(18.dp))
-                        }
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text(text = expense.category, color = colors.foreground, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            Text(text = expense.note, color = colors.mutedForeground, fontSize = 11.sp)
-                            Text(text = expense.date, color = colors.mutedForeground, fontSize = 10.sp)
-                        }
-                        Text(
-                            text = "₹${"%,.0f".format(expense.amount)}",
-                            color = colors.foreground,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+        item(key = "hero_card") {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(21.dp))
+                    .background(colors.foreground)
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = viewModel.t("septemberSpend").uppercase(),
+                        color = colors.card.copy(alpha = 0.68f),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.3.sp
+                    )
+                    Text(
+                        text = "₹${"%,.0f".format(totalSpend)}",
+                        color = colors.card,
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 5.dp)
+                    )
                 }
-            } else {
+                Icon(Icons.Default.TrendingDown, null, tint = colors.accent, modifier = Modifier.size(30.dp))
+            }
+        }
+
+        if (expenses.isNotEmpty()) {
+            item(key = "pie_chart_heading") {
+                SectionHeading(title = viewModel.t("spendingBreakdown"))
+            }
+            item(key = "pie_chart") {
+                ExpensePieChart(
+                    slices = categoryTotals,
+                    total = totalSpend,
+                    breakdownTitle = viewModel.t("breakdown"),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+        item(key = "recent_expenses_heading") {
+            SectionHeading(title = viewModel.t("recentExpenses"))
+        }
+
+        if (expenses.isEmpty()) {
+            item(key = "empty_state") {
                 EmptyState(
                     icon = Icons.Default.ReceiptLong,
                     title = viewModel.t("noExpensesLogged"),
                     detail = viewModel.t("noExpensesLoggedDetail")
                 )
             }
+        } else {
+            items(expenses, key = { it.id }) { expense ->
+                val sliceIndex = categoryTotals.indexOfFirst { it.first == expense.category }
+                val dotColor = if (sliceIndex >= 0) colorForIndex(sliceIndex) else colors.primary
+                ExpenseRow(expense = expense, dotColor = dotColor)
+            }
         }
 
-        // ── Log expense form ─────────────────────────────────────────────
-        SectionHeading(title = viewModel.t("logExpense"))
+        item(key = "log_expense_heading") {
+            SectionHeading(title = viewModel.t("logExpense"))
+        }
+
+        item(key = "log_expense_card") {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -471,8 +444,9 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
             PrimaryButton(label = viewModel.t("saveExpense"), icon = Icons.Default.Add, onClick = add)
         }
     }
+}
 
-    // ── Add-custom-category dialog ────────────────────────────────────────
+    // ── Add-custom-category dialog ────────────────────────────────────
     if (showAddCategoryDialog) {
         Dialog(onDismissRequest = { showAddCategoryDialog = false; newCategoryInput = "" }) {
             Surface(
@@ -551,5 +525,57 @@ fun ExpensesScreen(navController: NavController, viewModel: MessViewModel) {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ExpenseRow(
+    expense: Expense,
+    dotColor: Color,
+    modifier: Modifier = Modifier
+) {
+    val colors = BhojnifyTheme.colors
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, colors.border, RoundedCornerShape(16.dp))
+            .background(colors.card)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(dotColor.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
+        ) {
+            val icon = when (expense.category) {
+                "Gas" -> Icons.Default.LocalFireDepartment
+                "Maintenance" -> Icons.Default.Build
+                "Electricity" -> Icons.Default.ElectricBolt
+                "Water" -> Icons.Default.WaterDrop
+                "Grocery" -> Icons.Default.ShoppingBasket
+                "Salary" -> Icons.Default.People
+                "Rent" -> Icons.Default.Home
+                "Packaging" -> Icons.Default.Inventory2
+                else -> Icons.Default.ShoppingCart
+            }
+            Icon(icon, null, tint = dotColor, modifier = Modifier.size(18.dp))
+        }
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(text = expense.category, color = colors.foreground, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(text = expense.note, color = colors.mutedForeground, fontSize = 11.sp)
+            Text(text = expense.date, color = colors.mutedForeground, fontSize = 10.sp)
+        }
+        Text(
+            text = "₹${"%,.0f".format(expense.amount)}",
+            color = colors.foreground,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
