@@ -12,10 +12,13 @@ import com.bhojnify.core.service.DateUtils
 import com.bhojnify.core.service.FinancialReportSummary
 import com.bhojnify.core.service.ReportCalculator
 import com.bhojnify.core.state.MessStateManager
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.io.File
 
 class MessViewModel(application: Application) : AndroidViewModel(application) {
@@ -25,6 +28,15 @@ class MessViewModel(application: Application) : AndroidViewModel(application) {
     val stateManager: MessStateManager = MessStateManager(repository, viewModelScope)
 
     val state: StateFlow<MessState> = stateManager.state
+
+    private val _isReady = MutableStateFlow(false)
+    val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            _isReady.value = true
+        }
+    }
 
     val reportSummary: StateFlow<FinancialReportSummary> = state.map { s ->
         ReportCalculator.calculate(

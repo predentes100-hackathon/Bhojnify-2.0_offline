@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -28,8 +29,13 @@ sealed class BottomNavItem(val route: String, val icon: ImageVector, val labelKe
 fun AppNavigator(viewModel: MessViewModel) {
     val navController = rememberNavController()
 
+    val isReady by viewModel.isReady.collectAsStateWithLifecycle()
+    if (!isReady) {
+        return
+    }
+
     // Read initial route depending on onboarding complete
-    val state = viewModel.state.value
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val startDestination = if (state.onboardingComplete) Routes.HOME else Routes.ONBOARDING
 
     Scaffold(
@@ -67,18 +73,18 @@ fun AppNavigator(viewModel: MessViewModel) {
         ) {
             composable(Routes.ONBOARDING) { OnboardingScreen(navController, viewModel) }
             composable(Routes.HOME) { HomeScreen(navController, viewModel) }
+            composable(Routes.CUSTOMERS) { CustomersScreen(navController, viewModel) }
+            composable(Routes.ATTENDANCE) { AttendanceScreen(navController, viewModel) }
+            composable(Routes.PAYMENTS) { PaymentsScreen(navController, viewModel) }
+            composable(Routes.EXPENSES) { ExpensesScreen(navController, viewModel) }
+            composable(Routes.INVENTORY) { InventoryScreen(navController, viewModel) }
+            composable(Routes.STAFF) { StaffScreen(navController, viewModel) }
+            composable(Routes.MENU) { MenuScreen(navController, viewModel) }
+            composable(Routes.FEEDBACK) { FeedbackScreen(navController, viewModel) }
+            composable(Routes.REPORT) { ReportScreen(navController, viewModel) }
             composable(Routes.ADMIN) { AdminScreen(navController, viewModel) }
             composable(Routes.PROFILE) { ProfileScreen(navController, viewModel) }
-            composable(Routes.CUSTOMERS) { CustomersScreen(navController, viewModel) }
-            composable(Routes.INVENTORY) { InventoryScreen(navController, viewModel) }
             composable(Routes.LEAVE) { LeaveScreen(navController, viewModel) }
-            composable(Routes.MENU) { MenuScreen(navController, viewModel) }
-            composable(Routes.EXPENSES) { ExpensesScreen(navController, viewModel) }
-            composable(Routes.PAYMENTS) { PaymentsScreen(navController, viewModel) }
-            composable(Routes.REPORT) { ReportScreen(navController, viewModel) }
-            composable(Routes.STAFF) { StaffScreen(navController, viewModel) }
-            composable(Routes.FEEDBACK) { FeedbackScreen(navController, viewModel) }
-            composable(Routes.ATTENDANCE) { AttendanceScreen(navController, viewModel) }
         }
     }
 }
