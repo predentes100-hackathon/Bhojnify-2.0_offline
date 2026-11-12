@@ -1,11 +1,13 @@
 package com.bhojnify.android.theme
 
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 
 data class BhojnifyColors(
     val primary: Color,
@@ -50,6 +52,7 @@ val LocalBhojnifyColors = staticCompositionLocalOf {
 @Composable
 fun BhojnifyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val customColors = if (darkTheme) {
@@ -92,17 +95,60 @@ fun BhojnifyTheme(
         )
     }
 
-    val materialColorScheme = if (darkTheme) {
-        darkColorScheme(
+    val context = LocalContext.current
+    val materialColorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        darkTheme -> darkColorScheme(
             primary = customColors.primary,
+            onPrimary = customColors.primaryForeground,
+            primaryContainer = customColors.secondary,
+            onPrimaryContainer = customColors.secondaryForeground,
+            secondary = customColors.secondaryForeground,
+            onSecondary = customColors.primaryForeground,
+            secondaryContainer = customColors.secondary,
+            onSecondaryContainer = customColors.secondaryForeground,
+            tertiary = customColors.accent,
+            onTertiary = customColors.accentForeground,
+            error = customColors.destructive,
+            onError = customColors.destructiveForeground,
             background = customColors.background,
-            surface = customColors.card
+            onBackground = customColors.foreground,
+            surface = customColors.card,
+            onSurface = customColors.cardForeground,
+            surfaceVariant = customColors.muted,
+            onSurfaceVariant = customColors.mutedForeground,
+            outline = customColors.border,
+            outlineVariant = customColors.input,
+            surfaceContainer = customColors.card,
+            surfaceContainerLow = customColors.background,
+            surfaceContainerHighest = customColors.muted
         )
-    } else {
-        lightColorScheme(
+        else -> lightColorScheme(
             primary = customColors.primary,
+            onPrimary = customColors.primaryForeground,
+            primaryContainer = customColors.secondary,
+            onPrimaryContainer = customColors.secondaryForeground,
+            secondary = customColors.secondaryForeground,
+            onSecondary = customColors.primaryForeground,
+            secondaryContainer = customColors.secondary,
+            onSecondaryContainer = customColors.secondaryForeground,
+            tertiary = customColors.accent,
+            onTertiary = customColors.accentForeground,
+            error = customColors.destructive,
+            onError = customColors.destructiveForeground,
             background = customColors.background,
-            surface = customColors.card
+            onBackground = customColors.foreground,
+            surface = customColors.card,
+            onSurface = customColors.cardForeground,
+            surfaceVariant = customColors.muted,
+            onSurfaceVariant = customColors.mutedForeground,
+            outline = customColors.border,
+            outlineVariant = customColors.input,
+            surfaceContainer = customColors.card,
+            surfaceContainerLow = customColors.background,
+            surfaceContainerHighest = customColors.muted
         )
     }
 

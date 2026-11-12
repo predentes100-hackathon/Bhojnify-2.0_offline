@@ -1,5 +1,7 @@
 package com.bhojnify.android.screens
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -10,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,7 +28,7 @@ import com.bhojnify.android.viewmodel.MessViewModel
 @Composable
 fun ReportScreen(navController: NavController, viewModel: MessViewModel) {
     val colors = BhojnifyTheme.colors
-    val summary by viewModel.reportSummary.collectAsState()
+    val summary by viewModel.reportSummary.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier

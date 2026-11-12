@@ -1,5 +1,7 @@
 package com.bhojnify.android.screens
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -32,7 +33,7 @@ import java.time.LocalDate
 @Composable
 fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
     val colors = BhojnifyTheme.colors
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     val profile = state.profile
     val inventory = state.inventory
@@ -42,17 +43,21 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
     val reminders = state.reminders
     val customers = state.customers
 
-    val lowStock = inventory.filter { it.quantity <= it.minimum }
-    val revenue = payments.sumOf { it.amount }
-    val spend = expenses.sumOf { it.amount }
-    val currentDate = LocalDate.now().toString()
-    val dueReminders = reminders.filter { it.dueDate <= currentDate }
+    val todayLabel = remember { DateUtils.todayString() }
+    val currentDate = remember { LocalDate.now().toString() }
 
-    // Note: Java default Locale mapping would be needed for exact formatting,
-    // Using a simpler string for now, or just let i18n handle what it can
-    val todayLabel = DateUtils.todayString()
+    val lowStock = remember(inventory) { inventory.filter { it.quantity <= it.minimum } }
+    val revenue = remember(payments) { payments.sumOf { it.amount } }
+    val spend = remember(expenses) { expenses.sumOf { it.amount } }
+    val dueReminders = remember(reminders, currentDate) { reminders.filter { it.dueDate <= currentDate } }
 
-    val expiringCustomers = reactToCustomers(customers)
+    val todayMealsCount = remember(attendance, todayLabel) { attendance.count { it.date == todayLabel } }
+    val activeCustomerCount = remember(customers) { customers.count { !DateUtils.getExpiryInfo(it.expiryDate).isExpired } }
+    val todayAttendanceRate = remember(activeCustomerCount, todayMealsCount) {
+        if (activeCustomerCount > 0) (todayMealsCount * 100) / (activeCustomerCount * 3) else 0
+    }
+
+    val expiringCustomers = remember(customers, todayLabel) { reactToCustomers(customers, todayLabel) }
 
     Column(
         modifier = Modifier
@@ -66,6 +71,7 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
             eyebrow = "${viewModel.t("ownerWorkspace")} · $todayLabel",
             title = viewModel.t("goodMorning", mapOf("name" to (profile.name.ifEmpty { viewModel.t("owner") }))),
             subtitle = profile.messName.ifEmpty { viewModel.t("herePulse") },
+            actionContentDescription = viewModel.t("profile"),
             onActionClick = { navController.navigate(Routes.PROFILE) }
         )
 
@@ -191,35 +197,92 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
             Icon(Icons.Default.Restaurant, null, tint = colors.accent, modifier = Modifier.size(46.dp))
         }
 
-        // Stats Row
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatCard(
-                label = viewModel.t("mealsServed").uppercase(),
-                value = "${attendance.size}",
-                detail = viewModel.t("vsLastWeek"),
-                modifier = Modifier.weight(1f)
-            )
-            StatCard(
-                label = viewModel.t("revenue").uppercase(),
-                value = "₹${"%.1f".format(revenue / 1000.0)}k",
-                detail = viewModel.t("thisMonth"),
-                tone = BadgeTone.AMBER,
-                modifier = Modifier.weight(1f)
-            )
+        // Stats Row - 4 columns on wide/expanded screen, 2x2 on compact
+        val isWide = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600
+        if (isWide) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                StatCard(
+                    label = viewModel.t("mealsServed").uppercase(),
+                    value = "$todayMealsCount",
+                    detail = "$todayAttendanceRate% rate today",
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { navController.navigate(Routes.ATTENDANCE) }
+                )
+                StatCard(
+                    label = viewModel.t("revenue").uppercase(),
+                    value = "₹${"%.1f".format(revenue / 1000.0)}k",
+                    detail = viewModel.t("thisMonth"),
+                    tone = BadgeTone.AMBER,
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    label = viewModel.t("expenses").uppercase(),
+                    value = "₹${"%.1f".format(spend / 1000.0)}k",
+                    detail = viewModel.t("thisMonth"),
+                    tone = BadgeTone.RED,
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    label = viewModel.t("activeMembers").uppercase(),
+                    value = "$activeCustomerCount",
+                    detail = "${customers.size} total",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                StatCard(
+                    label = viewModel.t("mealsServed").uppercase(),
+                    value = "$todayMealsCount",
+                    detail = "$todayAttendanceRate% rate today",
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { navController.navigate(Routes.ATTENDANCE) }
+                )
+                StatCard(
+                    label = viewModel.t("revenue").uppercase(),
+                    value = "₹${"%.1f".format(revenue / 1000.0)}k",
+                    detail = viewModel.t("thisMonth"),
+                    tone = BadgeTone.AMBER,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                StatCard(
+                    label = viewModel.t("expenses").uppercase(),
+                    value = "₹${"%.1f".format(spend / 1000.0)}k",
+                    detail = viewModel.t("thisMonth"),
+                    tone = BadgeTone.RED,
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    label = viewModel.t("activeMembers").uppercase(),
+                    value = "$activeCustomerCount",
+                    detail = "${customers.size} total",
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatCard(
-                label = viewModel.t("expenses").uppercase(),
-                value = "₹${"%.1f".format(spend / 1000.0)}k",
-                detail = viewModel.t("thisMonth"),
-                tone = BadgeTone.RED,
-                modifier = Modifier.weight(1f)
+
+        // Quick Actions: Top two tasks with one-tap thumb-friendly buttons
+        SectionHeading(title = viewModel.t("quickActions"))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            PrimaryButton(
+                label = viewModel.t("markAttendance"),
+                icon = Icons.Default.CheckCircle,
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate(Routes.ATTENDANCE) }
             )
-            StatCard(
-                label = viewModel.t("activeMembers").uppercase(),
-                value = "${customers.size}",
-                detail = viewModel.t("attendanceRate"),
-                modifier = Modifier.weight(1f)
+            PrimaryButton(
+                label = viewModel.t("recordPayment"),
+                icon = Icons.Default.Payment,
+                secondary = true,
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate(Routes.PAYMENTS) }
             )
         }
 
@@ -228,29 +291,51 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
             IconTile(Icons.Default.People, viewModel.t("customers"), onClick = { navController.navigate(Routes.CUSTOMERS) }, modifier = Modifier.weight(1f))
             IconTile(Icons.Default.RestaurantMenu, viewModel.t("menuPlan"), onClick = { navController.navigate(Routes.MENU) }, modifier = Modifier.weight(1f))
             IconTile(Icons.Default.DateRange, viewModel.t("leaves"), onClick = { navController.navigate(Routes.LEAVE) }, modifier = Modifier.weight(1f))
-            IconTile(Icons.Default.Inventory, viewModel.t("inventory"), onClick = { navController.navigate(Routes.INVENTORY) }, modifier = Modifier.weight(1f))
+            IconTile(Icons.Default.ReceiptLong, viewModel.t("expenses"), onClick = { navController.navigate(Routes.EXPENSES) }, modifier = Modifier.weight(1f))
         }
 
         PrimaryButton(label = viewModel.t("openAdminPanel"), icon = Icons.Default.GridOn, onClick = { navController.navigate(Routes.ADMIN) })
 
-        SectionHeading(title = viewModel.t("needsAttention"))
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(19.dp))
-                .border(1.dp, colors.border, RoundedCornerShape(19.dp))
-                .background(colors.card)
-                .padding(horizontal = 14.dp)
-        ) {
-            // Attention items logic...
-            Text("Needs attention content here...", modifier = Modifier.padding(14.dp), color = colors.mutedForeground)
+        SectionHeading(
+            title = viewModel.t("needsAttention"),
+            action = if (lowStock.size > 5) viewModel.t("viewAll") else null,
+            onActionClick = { navController.navigate(Routes.INVENTORY) }
+        )
+        if (lowStock.isEmpty()) {
+            EmptyState(
+                icon = Icons.Default.CheckCircle,
+                title = viewModel.t("allStockHealthy"),
+                detail = viewModel.t("allClearHealthy")
+            )
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(19.dp))
+                    .border(1.dp, colors.border, RoundedCornerShape(19.dp))
+                    .background(colors.card)
+                    .padding(horizontal = 14.dp)
+            ) {
+                val displayItems = lowStock.take(5)
+                displayItems.forEachIndexed { index, item ->
+                    RowItem(
+                        icon = Icons.Default.Warning,
+                        title = item.name,
+                        detail = "${item.quantity} / ${item.minimum} ${item.unit}",
+                        destructive = true,
+                        onClick = { navController.navigate(Routes.INVENTORY) }
+                    )
+                    if (index < displayItems.size - 1) {
+                        HorizontalDivider(color = colors.border.copy(alpha = 0.5f))
+                    }
+                }
+            }
         }
     }
 }
 
 // Temporary calculation logic port for UI
-private fun reactToCustomers(customers: List<com.bhojnify.core.model.Customer>): List<Pair<com.bhojnify.core.model.Customer, com.bhojnify.core.model.ExpiryInfo>> {
-    val today = DateUtils.todayString()
+private fun reactToCustomers(customers: List<com.bhojnify.core.model.Customer>, today: String): List<Pair<com.bhojnify.core.model.Customer, com.bhojnify.core.model.ExpiryInfo>> {
     return customers.map {
         it to DateUtils.getExpiryInfo(it.expiryDate, today)
     }.filter { it.second.isExpiringSoon || it.second.isExpired }

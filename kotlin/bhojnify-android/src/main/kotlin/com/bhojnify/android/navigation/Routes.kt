@@ -14,4 +14,5 @@ object Routes {
     const val REPORT = "report"
     const val STAFF = "staff"
     const val FEEDBACK = "feedback"
+    const val ATTENDANCE = "attendance"
 }

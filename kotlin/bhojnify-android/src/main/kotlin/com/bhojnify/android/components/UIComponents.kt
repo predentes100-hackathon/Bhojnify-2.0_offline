@@ -11,6 +11,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
+import androidx.compose.animation.core.*
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +40,7 @@ fun Header(
     title: String,
     eyebrow: String? = null,
     subtitle: String? = null,
+    actionContentDescription: String? = null,
     onActionClick: (() -> Unit)? = null
 ) {
     val colors = BhojnifyTheme.colors
@@ -43,44 +55,48 @@ fun Header(
             if (eyebrow != null) {
                 Text(
                     text = eyebrow.uppercase(),
-                    color = colors.primary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.2.sp
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = colors.primary,
+                        fontSize = 11.sp,
+                        letterSpacing = 1.2.sp
+                    )
                 )
                 Spacer(modifier = Modifier.height(4.dp))
             }
             Text(
                 text = title,
-                color = colors.foreground,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                lineHeight = 32.sp
+                modifier = Modifier.semantics { heading() },
+                style = MaterialTheme.typography.displaySmall.copy(
+                    color = colors.foreground,
+                    lineHeight = 32.sp
+                )
             )
             if (subtitle != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = subtitle,
-                    color = colors.mutedForeground,
-                    fontSize = 14.sp
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = colors.mutedForeground
+                    )
                 )
             }
         }
         if (onActionClick != null) {
             Box(
                 modifier = Modifier
-                    .size(42.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
                     .background(colors.card)
                     .border(1.dp, colors.border, CircleShape)
+                    .semantics { role = Role.Button }
                     .clickable { onActionClick() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Person,
-                    contentDescription = "Profile",
+                    contentDescription = actionContentDescription ?: "Profile",
                     tint = colors.foreground,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
@@ -103,16 +119,18 @@ fun SectionHeading(
     ) {
         Text(
             text = title,
-            color = colors.foreground,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
+            modifier = Modifier.semantics { heading() },
+            style = MaterialTheme.typography.titleMedium.copy(
+                color = colors.foreground
+            )
         )
         if (action != null) {
             Text(
                 text = action,
-                color = colors.primary,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    color = colors.primary,
+                    fontSize = 13.sp
+                ),
                 modifier = Modifier.clickable { onActionClick?.invoke() }
             )
         }
@@ -142,9 +160,11 @@ fun Badge(
     ) {
         Text(
             text = label,
-            color = fg,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold
+            style = MaterialTheme.typography.labelMedium.copy(
+                color = fg,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+            )
         )
     }
 }
@@ -193,9 +213,10 @@ fun PrimaryButton(
             }
             Text(
                 text = label,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = fg
+                style = MaterialTheme.typography.labelLarge.copy(
+                    color = fg,
+                    fontSize = 15.sp
+                )
             )
         }
     }
@@ -212,9 +233,11 @@ fun IconTile(
     val colors = BhojnifyTheme.colors
     Box(
         modifier = modifier
+            .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(colors.card)
             .border(1.dp, colors.border, RoundedCornerShape(16.dp))
+            .semantics { role = Role.Button }
             .clickable { onClick() }
             .padding(horizontal = 8.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
@@ -239,10 +262,11 @@ fun IconTile(
             }
             Text(
                 text = label,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = colors.foreground,
-                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    color = colors.foreground,
+                    fontSize = 11.sp,
+                    textAlign = TextAlign.Center
+                ),
                 maxLines = 1
             )
         }
@@ -277,23 +301,27 @@ fun StatCard(
         ) {
             Text(
                 text = label,
-                color = fg.copy(alpha = 0.78f),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.labelMedium.copy(
+                    color = fg.copy(alpha = 0.78f),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
             )
             Text(
                 text = value,
-                color = fg,
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-0.5).sp
+                style = MaterialTheme.typography.displaySmall.copy(
+                    color = fg,
+                    fontSize = 26.sp,
+                    letterSpacing = (-0.5).sp
+                )
             )
             if (detail != null) {
                 Text(
                     text = detail,
-                    color = fg.copy(alpha = 0.82f),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        color = fg.copy(alpha = 0.82f),
+                        fontSize = 11.sp
+                    )
                 )
             }
         }
@@ -338,16 +366,19 @@ fun RowItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.foreground
+                style = MaterialTheme.typography.titleSmall.copy(
+                    color = colors.foreground,
+                    fontSize = 15.sp
+                )
             )
             if (detail != null) {
                 Text(
                     text = detail,
-                    fontSize = 12.sp,
-                    color = colors.mutedForeground,
-                    lineHeight = 16.sp
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = colors.mutedForeground,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp
+                    )
                 )
             }
         }
@@ -371,6 +402,8 @@ fun FormField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     keyboardType: KeyboardType = KeyboardType.Text,
+    isError: Boolean = false,
+    errorMessage: String? = null,
     modifier: Modifier = Modifier
 ) {
     val colors = BhojnifyTheme.colors
@@ -381,24 +414,39 @@ fun FormField(
         if (label.isNotBlank()) {
             Text(
                 text = label,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.foreground
+                style = MaterialTheme.typography.titleSmall.copy(
+                    color = colors.foreground,
+                    fontSize = 13.sp
+                )
             )
         }
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = { Text(text = placeholder, color = colors.mutedForeground, fontSize = 14.sp) },
+            placeholder = {
+                Text(
+                    text = placeholder,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = colors.mutedForeground,
+                        fontSize = 14.sp
+                    )
+                )
+            },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             shape = RoundedCornerShape(13.dp),
+            isError = isError,
+            supportingText = if (isError && errorMessage != null) {
+                { Text(text = errorMessage, color = colors.destructive, style = MaterialTheme.typography.bodySmall) }
+            } else null,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = colors.card,
                 unfocusedContainerColor = colors.card,
                 focusedBorderColor = colors.primary,
                 unfocusedBorderColor = colors.input,
                 focusedTextColor = colors.foreground,
-                unfocusedTextColor = colors.foreground
+                unfocusedTextColor = colors.foreground,
+                errorBorderColor = colors.destructive,
+                errorLabelColor = colors.destructive
             ),
             modifier = Modifier.fillMaxWidth()
         )
@@ -433,17 +481,82 @@ fun EmptyState(
             )
             Text(
                 text = title,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.foreground
+                style = MaterialTheme.typography.titleSmall.copy(
+                    color = colors.foreground,
+                    fontSize = 16.sp
+                )
             )
             Text(
                 text = detail,
-                fontSize = 13.sp,
-                color = colors.mutedForeground,
-                textAlign = TextAlign.Center,
-                lineHeight = 18.sp
+                style = MaterialTheme.typography.bodySmall.copy(
+                    color = colors.mutedForeground,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                    textAlign = TextAlign.Center
+                )
             )
         }
+    }
+}
+
+val LocalSnackbarHostState = staticCompositionLocalOf<SnackbarHostState> {
+    error("No SnackbarHostState provided")
+}
+
+@Composable
+fun ShimmerBox(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(14.dp)
+) {
+    val colors = BhojnifyTheme.colors
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer_anim"
+    )
+
+    val shimmerColors = listOf(
+        colors.muted,
+        colors.card,
+        colors.muted
+    )
+
+    val brush = Brush.linearGradient(
+        colors = shimmerColors,
+        start = Offset.Zero,
+        end = Offset(x = translateAnim, y = translateAnim)
+    )
+
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(brush)
+    )
+}
+
+@Composable
+fun CustomerSkeletonItem(modifier: Modifier = Modifier) {
+    val colors = BhojnifyTheme.colors
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, colors.border, RoundedCornerShape(16.dp))
+            .background(colors.card)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        ShimmerBox(modifier = Modifier.size(48.dp), shape = CircleShape)
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.6f).height(16.dp))
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.4f).height(12.dp))
+        }
+        ShimmerBox(modifier = Modifier.size(60.dp, 24.dp))
     }
 }

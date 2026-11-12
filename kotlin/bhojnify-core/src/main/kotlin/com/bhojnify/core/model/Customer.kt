@@ -29,5 +29,7 @@ data class Customer(
     val expiryDate: String,
     val paymentStatus: CustomerPaymentStatus = CustomerPaymentStatus.PAID,
     val phone: String,
-    val imageUri: String? = null
+    val imageUri: String? = null,
+    val amount: Double? = null,
+    val lastRenewedAt: String? = null
 )

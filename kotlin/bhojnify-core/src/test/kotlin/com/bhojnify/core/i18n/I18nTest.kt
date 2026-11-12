@@ -31,4 +31,15 @@ class I18nTest {
         assertEquals("नाश्ता", I18n.localizedValue(Language.MR, "Breakfast"))
         assertEquals("Lunch", I18n.localizedValue(Language.EN, "Lunch"))
     }
+
+    @Test
+    fun `test english and marathi maps have identical key sets`() {
+        val enKeys = I18n.englishKeys()
+        val mrKeys = I18n.marathiKeys()
+        val missingInMr = enKeys - mrKeys
+        val missingInEn = mrKeys - enKeys
+        assertTrue(missingInMr.isEmpty(), "Keys missing in Marathi: $missingInMr")
+        assertTrue(missingInEn.isEmpty(), "Keys missing in English: $missingInEn")
+        assertEquals(enKeys, mrKeys)
+    }
 }

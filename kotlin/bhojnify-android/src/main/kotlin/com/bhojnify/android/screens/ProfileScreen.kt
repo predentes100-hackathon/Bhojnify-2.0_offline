@@ -1,5 +1,7 @@
 package com.bhojnify.android.screens
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,7 +40,7 @@ import com.bhojnify.core.i18n.Language
 @Composable
 fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
     val colors = BhojnifyTheme.colors
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
 
@@ -47,6 +49,8 @@ fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
 
     var rules by remember(policies.rules) { mutableStateOf(policies.rules) }
     var privacy by remember(policies.privacy) { mutableStateOf(policies.privacy) }
+    var maxPlanValidity by remember(policies.maxPlanValidityDays) { mutableStateOf(policies.maxPlanValidityDays.toString()) }
+    var maxLeaveDays by remember(policies.maxLeaveDays) { mutableStateOf(policies.maxLeaveDays.toString()) }
 
     val initials = if (profile.name.isNotEmpty()) {
         profile.name.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase()
@@ -57,6 +61,7 @@ fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
             .fillMaxSize()
             .background(colors.background)
             .verticalScroll(rememberScrollState())
+            .imePadding()
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -304,12 +309,40 @@ fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
             }
         }
 
-        Text(
-            text = viewModel.t("policiesSavedLocally"),
-            color = colors.mutedForeground,
-            fontSize = 11.sp,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
+        SectionHeading(title = viewModel.t("planAndLeaveLimits"))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(19.dp))
+                .border(1.dp, colors.border, RoundedCornerShape(19.dp))
+                .background(colors.card)
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(viewModel.t("planLeaveLimitsDetail"), color = colors.mutedForeground, fontSize = 12.sp)
+            OutlinedTextField(
+                value = maxPlanValidity,
+                onValueChange = {
+                    maxPlanValidity = it
+                    it.toIntOrNull()?.takeIf { value -> value > 0 }?.let { value -> viewModel.updatePolicies(policies.copy(maxPlanValidityDays = value)) }
+                },
+                label = { Text(viewModel.t("maxPlanValidityDays")) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = maxLeaveDays,
+                onValueChange = {
+                    maxLeaveDays = it
+                    it.toIntOrNull()?.takeIf { value -> value >= 0 }?.let { value -> viewModel.updatePolicies(policies.copy(maxLeaveDays = value)) }
+                },
+                label = { Text(viewModel.t("maxLeaveDays")) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            Text(viewModel.t("limitsDefaults"), color = colors.mutedForeground, fontSize = 11.sp)
+        }
+
 
         SectionHeading(title = viewModel.t("language"))
         Column(
@@ -362,7 +395,7 @@ fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
             }
         }
 
-        SectionHeading(title = "Data Management")
+        SectionHeading(title = viewModel.t("dataManagement"))
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -372,14 +405,14 @@ fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
                 .padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(text = "Backup and restore your local data", fontSize = 12.sp, color = colors.mutedForeground)
+            Text(text = viewModel.t("backupRestoreSubtitle"), fontSize = 12.sp, color = colors.mutedForeground)
             
             val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
                 uri?.let {
                     if (com.bhojnify.android.utils.BackupManager.exportData(context, it, state)) {
-                        Toast.makeText(context, "Data exported successfully", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, viewModel.t("dataExportSuccess"), Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(context, "Failed to export data", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, viewModel.t("dataExportFailed"), Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -389,9 +422,9 @@ fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
                     val importedState = com.bhojnify.android.utils.BackupManager.importData(context, fileUri)
                     if (importedState != null) {
                         viewModel.replaceState(importedState)
-                        Toast.makeText(context, "Data imported successfully", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, viewModel.t("dataImportSuccess"), Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(context, "Failed to import data", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, viewModel.t("dataImportFailed"), Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -411,7 +444,7 @@ fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Upload, null, tint = colors.primary, modifier = Modifier.size(18.dp))
-                        Text(text = "Export Backup", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.primary)
+                        Text(text = viewModel.t("exportBackup"), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.primary)
                     }
                 }
 
@@ -426,7 +459,7 @@ fun ProfileScreen(navController: NavController, viewModel: MessViewModel) {
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Download, null, tint = colors.primary, modifier = Modifier.size(18.dp))
-                        Text(text = "Import Backup", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.primary)
+                        Text(text = viewModel.t("importBackup"), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.primary)
                     }
                 }
             }
