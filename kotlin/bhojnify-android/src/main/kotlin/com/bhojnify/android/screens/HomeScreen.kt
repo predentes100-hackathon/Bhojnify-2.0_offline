@@ -45,10 +45,15 @@ fun HomeScreen(navController: NavController, viewModel: MessViewModel) {
 
     val todayLabel = remember { DateUtils.todayString() }
     val currentDate = remember { LocalDate.now().toString() }
+    val currentYearMonth = remember { DateUtils.currentYearMonth() }
 
     val lowStock = remember(inventory) { inventory.filter { it.quantity <= it.minimum } }
-    val revenue = remember(payments) { payments.sumOf { it.amount } }
-    val spend = remember(expenses) { expenses.sumOf { it.amount } }
+    val revenue = remember(payments, currentYearMonth) {
+        payments.filter { it.date.startsWith(currentYearMonth) }.sumOf { it.amount }
+    }
+    val spend = remember(expenses, currentYearMonth) {
+        expenses.filter { it.date.startsWith(currentYearMonth) }.sumOf { it.amount }
+    }
     val dueReminders = remember(reminders, currentDate) { reminders.filter { it.dueDate <= currentDate } }
 
     val todayMealsCount = remember(attendance, todayLabel) { attendance.count { it.date == todayLabel } }
