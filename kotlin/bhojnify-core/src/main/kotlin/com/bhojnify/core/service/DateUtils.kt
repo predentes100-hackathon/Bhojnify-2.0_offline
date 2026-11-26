@@ -59,41 +59,50 @@ object DateUtils {
         }
     }
 
-    fun parseDate(dateStr: String): LocalDate {
+    fun parseDateOrNull(dateStr: String?): LocalDate? {
+        if (dateStr.isNullOrBlank()) return null
         return try {
             LocalDate.parse(dateStr.trim().take(10), ISO_FORMATTER)
         } catch (e: Exception) {
-            throw IllegalArgumentException("Invalid date format: $dateStr")
+            null
         }
+    }
+
+    fun parseDate(dateStr: String?): LocalDate {
+        return parseDateOrNull(dateStr) ?: LocalDate.now()
     }
 
     fun formatDate(value: String, language: Language = Language.EN): String {
         return try {
-            val date = parseDate(value)
+            val date = parseDateOrNull(value) ?: return value
             val locale = if (language == Language.MR) Locale.forLanguageTag("mr-IN") else Locale.ENGLISH
             val formatter = DateTimeFormatter.ofPattern("d MMM", locale)
             date.format(formatter)
         } catch (e: Exception) {
-            value.toString()
+            value
         }
     }
 
     fun formatDateFull(value: String, language: Language = Language.EN): String {
         return try {
-            val date = parseDate(value)
+            val date = parseDateOrNull(value) ?: return value
             val locale = if (language == Language.MR) Locale.forLanguageTag("mr-IN") else Locale.ENGLISH
             val formatter = DateTimeFormatter.ofPattern("EEEE, dd MMMM", locale)
             date.format(formatter)
         } catch (e: Exception) {
-            value.toString()
+            value
         }
     }
 
     fun daysUntil(value: String, todayStr: String = todayString()): Long {
-        val target = parseDate(value)
-        val today = parseDate(todayStr)
-        val diff = ChronoUnit.DAYS.between(today, target)
-        return maxOf(0L, diff)
+        return try {
+            val target = parseDateOrNull(value) ?: return 0L
+            val today = parseDateOrNull(todayStr) ?: LocalDate.now()
+            val diff = ChronoUnit.DAYS.between(today, target)
+            maxOf(0L, diff)
+        } catch (e: Exception) {
+            0L
+        }
     }
 
     fun getExpiryInfo(expiryDate: String?, todayStr: String = todayString()): ExpiryInfo {
@@ -107,34 +116,50 @@ object DateUtils {
             )
         }
 
-        val target = parseDate(expiryDate)
-        val today = parseDate(todayStr)
-        val daysRemaining = ChronoUnit.DAYS.between(today, target)
-
-        return when {
-            daysRemaining < 0 -> ExpiryInfo(
-                daysRemaining = daysRemaining,
-                status = ExpiryStatus.EXPIRED,
-                isExpired = true,
+        return try {
+            val target = parseDateOrNull(expiryDate) ?: return ExpiryInfo(
+                daysRemaining = 0,
+                status = ExpiryStatus.ACTIVE,
+                isExpired = false,
                 isExpiringSoon = false,
                 isExpiringToday = false
             )
-            daysRemaining == 0L -> ExpiryInfo(
+            val today = parseDateOrNull(todayStr) ?: LocalDate.now()
+            val daysRemaining = ChronoUnit.DAYS.between(today, target)
+
+            when {
+                daysRemaining < 0 -> ExpiryInfo(
+                    daysRemaining = daysRemaining,
+                    status = ExpiryStatus.EXPIRED,
+                    isExpired = true,
+                    isExpiringSoon = false,
+                    isExpiringToday = false
+                )
+                daysRemaining == 0L -> ExpiryInfo(
+                    daysRemaining = 0,
+                    status = ExpiryStatus.TODAY,
+                    isExpired = false,
+                    isExpiringSoon = true,
+                    isExpiringToday = true
+                )
+                daysRemaining <= 5L -> ExpiryInfo(
+                    daysRemaining = daysRemaining,
+                    status = ExpiryStatus.SOON,
+                    isExpired = false,
+                    isExpiringSoon = true,
+                    isExpiringToday = false
+                )
+                else -> ExpiryInfo(
+                    daysRemaining = daysRemaining,
+                    status = ExpiryStatus.ACTIVE,
+                    isExpired = false,
+                    isExpiringSoon = false,
+                    isExpiringToday = false
+                )
+            }
+        } catch (e: Exception) {
+            ExpiryInfo(
                 daysRemaining = 0,
-                status = ExpiryStatus.TODAY,
-                isExpired = false,
-                isExpiringSoon = true,
-                isExpiringToday = true
-            )
-            daysRemaining <= 5L -> ExpiryInfo(
-                daysRemaining = daysRemaining,
-                status = ExpiryStatus.SOON,
-                isExpired = false,
-                isExpiringSoon = true,
-                isExpiringToday = false
-            )
-            else -> ExpiryInfo(
-                daysRemaining = daysRemaining,
                 status = ExpiryStatus.ACTIVE,
                 isExpired = false,
                 isExpiringSoon = false,
@@ -144,13 +169,21 @@ object DateUtils {
     }
 
     fun addDays(dateStr: String, days: Long): String {
-        val date = parseDate(dateStr)
-        return date.plusDays(days).format(ISO_FORMATTER)
+        return try {
+            val date = parseDate(dateStr)
+            date.plusDays(days).format(ISO_FORMATTER)
+        } catch (e: Exception) {
+            LocalDate.now().plusDays(days).format(ISO_FORMATTER)
+        }
     }
 
     fun daysBetween(fromStr: String, toStr: String): Long {
-        val from = parseDate(fromStr)
-        val to = parseDate(toStr)
-        return ChronoUnit.DAYS.between(from, to)
+        return try {
+            val from = parseDateOrNull(fromStr) ?: return 0L
+            val to = parseDateOrNull(toStr) ?: return 0L
+            ChronoUnit.DAYS.between(from, to)
+        } catch (e: Exception) {
+            0L
+        }
     }
 }

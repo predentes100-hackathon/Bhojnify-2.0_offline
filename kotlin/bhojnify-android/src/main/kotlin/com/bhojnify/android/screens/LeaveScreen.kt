@@ -95,7 +95,7 @@ fun LeaveScreen(navController: NavController, viewModel: MessViewModel) {
                 title = viewModel.t("leaveTitle"),
                 subtitle = viewModel.t("leaveSubtitle"),
                 actionContentDescription = viewModel.t("profile"),
-                onActionClick = { navController.navigate(Routes.ADMIN) }
+                onActionClick = { navController.navigate(Routes.PROFILE) }
             )
         }
 

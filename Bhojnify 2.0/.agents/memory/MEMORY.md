@@ -1,2 +1,0 @@
-- [MessMate first-build boundary](messmate-first-build.md) — local-first mobile workflows; native attendance verification now, shared auth/sync/push later.
-- [Bhojnify language preference](bhojnify-language-preference.md) — English/Marathi is persisted locally; translate UI while preserving user-entered records.

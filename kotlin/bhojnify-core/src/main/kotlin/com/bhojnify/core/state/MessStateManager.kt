@@ -220,10 +220,17 @@ class MessStateManager(
         require(amount == null || amount > 0.0) { "Payment amount must be greater than zero" }
         scope.launch {
             val today = DateUtils.todayString()
-            val newExpiry = DateUtils.addDays(today, durationDays)
             repository.updateState { current ->
                 val customer = current.customers.find { it.id == customerId }
                     ?: return@updateState current
+                val baseDate = try {
+                    val expiry = DateUtils.parseDate(customer.expiryDate)
+                    val todayDate = DateUtils.parseDate(today)
+                    if (expiry.isAfter(todayDate)) customer.expiryDate else today
+                } catch (_: Exception) {
+                    today
+                }
+                val newExpiry = DateUtils.addDays(baseDate, durationDays)
                 val payment = amount?.let {
                     Payment(
                         id = generateId(),
@@ -238,7 +245,6 @@ class MessStateManager(
                     customers = current.customers.map {
                         if (it.id == customerId) {
                             it.copy(
-                                joiningDate = today,
                                 expiryDate = newExpiry,
                                 paymentStatus = CustomerPaymentStatus.PAID
                             )
@@ -269,10 +275,46 @@ class MessStateManager(
     fun updateLeaveStatus(requestId: String, status: LeaveStatus) {
         scope.launch {
             repository.updateState { current ->
-                current.copy(
-                    leaves = current.leaves.map {
-                        if (it.id == requestId) it.copy(status = status) else it
+                val leave = current.leaves.find { it.id == requestId } ?: return@updateState current
+                val shouldExtend = status == LeaveStatus.APPROVED && leave.status != LeaveStatus.APPROVED
+                val customerId = leave.customerId
+
+                val updatedLeaves = current.leaves.map {
+                    if (it.id == requestId) it.copy(status = status) else it
+                }
+
+                val updatedCustomers = if (shouldExtend && customerId != null) {
+                    val endDate = leave.to?.takeIf { it.isNotBlank() } ?: leave.from
+                    val durationDays = try {
+                        val days = DateUtils.daysBetween(leave.from, endDate) + 1
+                        maxOf(0L, days)
+                    } catch (_: Exception) {
+                        0L
                     }
+
+                    if (durationDays > 0) {
+                        current.customers.map { customer ->
+                            if (customer.id == customerId) {
+                                val newExpiry = try {
+                                    DateUtils.addDays(customer.expiryDate, durationDays)
+                                } catch (_: Exception) {
+                                    customer.expiryDate
+                                }
+                                customer.copy(expiryDate = newExpiry)
+                            } else {
+                                customer
+                            }
+                        }
+                    } else {
+                        current.customers
+                    }
+                } else {
+                    current.customers
+                }
+
+                current.copy(
+                    leaves = updatedLeaves,
+                    customers = updatedCustomers
                 )
             }
         }

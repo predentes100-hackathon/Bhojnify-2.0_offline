@@ -6,6 +6,7 @@ import com.bhojnify.core.model.Meal
 import com.bhojnify.core.model.MessState
 import com.bhojnify.core.repository.MessRepository
 import com.bhojnify.core.repository.InMemoryMessRepository
+import com.bhojnify.core.service.DateUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -121,5 +122,190 @@ class MessStateManagerTest {
 
         // Ensure reminder is removed from the state
         assertNull(classUnderTest.state.value.reminders.find { it.id == reminderId })
+    }
+
+    @Test
+    fun `early renewal preserves existing days and retains original joiningDate`() {
+        val today = DateUtils.todayString()
+        // Customer expiry is 10 days in the future from today
+        val futureExpiry = DateUtils.addDays(today, 10)
+        val originalJoiningDate = "2026-01-01"
+
+        classUnderTest.addCustomer(
+            name = "Alice",
+            plan = "Monthly Veg",
+            joiningDate = originalJoiningDate,
+            expiryDate = futureExpiry,
+            phone = "9876543210"
+        )
+        val customerId = classUnderTest.state.value.customers.first().id
+
+        // Renew for 30 days
+        classUnderTest.renewCustomerPlan(customerId, durationDays = 30)
+
+        val updatedCustomer = classUnderTest.state.value.customers.first { it.id == customerId }
+
+        // 1. Joining date must remain preserved (not overwritten with today)
+        assertEquals(originalJoiningDate, updatedCustomer.joiningDate)
+
+        // 2. Expiry date must be anchored to existing futureExpiry + 30 days, NOT today + 30 days
+        val expectedExpiry = DateUtils.addDays(futureExpiry, 30)
+        assertEquals(expectedExpiry, updatedCustomer.expiryDate)
+        assertEquals(CustomerPaymentStatus.PAID, updatedCustomer.paymentStatus)
+    }
+
+    @Test
+    fun `expired customer renewal anchors from today and retains original joiningDate`() {
+        val today = DateUtils.todayString()
+        // Customer expiry is 10 days in the past
+        val pastExpiry = DateUtils.addDays(today, -10)
+        val originalJoiningDate = "2025-12-01"
+
+        classUnderTest.addCustomer(
+            name = "Bob",
+            plan = "Monthly Veg",
+            joiningDate = originalJoiningDate,
+            expiryDate = pastExpiry,
+            phone = "9876543211"
+        )
+        val customerId = classUnderTest.state.value.customers.first().id
+
+        // Renew for 30 days
+        classUnderTest.renewCustomerPlan(customerId, durationDays = 30)
+
+        val updatedCustomer = classUnderTest.state.value.customers.first { it.id == customerId }
+
+        // Joining date preserved
+        assertEquals(originalJoiningDate, updatedCustomer.joiningDate)
+
+        // Since expired in the past, new expiry is anchored to today + 30 days
+        val expectedExpiry = DateUtils.addDays(today, 30)
+        assertEquals(expectedExpiry, updatedCustomer.expiryDate)
+    }
+
+    @Test
+    fun `approved leave extends customer expiryDate by duration of leave inclusive`() {
+        val initialExpiry = "2026-10-31"
+        classUnderTest.addCustomer(
+            name = "Charlie",
+            plan = "Monthly Veg",
+            joiningDate = "2026-09-01",
+            expiryDate = initialExpiry,
+            phone = "9876543212"
+        )
+        val customerId = classUnderTest.state.value.customers.first().id
+
+        // Leave from 2026-10-01 to 2026-10-05 (5 days inclusive: Oct 1, 2, 3, 4, 5)
+        classUnderTest.addLeave(
+            customerId = customerId,
+            from = "2026-10-01",
+            to = "2026-10-05",
+            reason = "Festival"
+        )
+        val leaveId = classUnderTest.state.value.leaves.first().id
+
+        // Approve leave via updateLeaveStatus
+        classUnderTest.updateLeaveStatus(leaveId, LeaveStatus.APPROVED)
+
+        val updatedLeave = classUnderTest.state.value.leaves.first { it.id == leaveId }
+        assertEquals(LeaveStatus.APPROVED, updatedLeave.status)
+
+        val updatedCustomer = classUnderTest.state.value.customers.first { it.id == customerId }
+        // 5 days inclusive added to 2026-10-31 -> 2026-11-05
+        val expectedExpiry = DateUtils.addDays(initialExpiry, 5)
+        assertEquals("2026-11-05", expectedExpiry)
+        assertEquals(expectedExpiry, updatedCustomer.expiryDate)
+    }
+
+    @Test
+    fun `single day approved leave extends customer expiryDate by 1 day`() {
+        val initialExpiry = "2026-10-31"
+        classUnderTest.addCustomer(
+            name = "Dana",
+            plan = "Monthly Veg",
+            joiningDate = "2026-09-01",
+            expiryDate = initialExpiry,
+            phone = "9876543213"
+        )
+        val customerId = classUnderTest.state.value.customers.first().id
+
+        // Single day leave: from 2026-10-15 to 2026-10-15 (1 day inclusive)
+        classUnderTest.addLeave(
+            customerId = customerId,
+            from = "2026-10-15",
+            to = "2026-10-15",
+            reason = "Doctor visit"
+        )
+        val leaveId = classUnderTest.state.value.leaves.first().id
+
+        classUnderTest.updateLeaveStatus(leaveId, LeaveStatus.APPROVED)
+
+        val updatedCustomer = classUnderTest.state.value.customers.first { it.id == customerId }
+        assertEquals("2026-11-01", updatedCustomer.expiryDate)
+    }
+
+    @Test
+    fun `non-approved or pending leave does not extend expiryDate`() {
+        val initialExpiry = "2026-10-31"
+        classUnderTest.addCustomer(
+            name = "Eve",
+            plan = "Monthly Veg",
+            joiningDate = "2026-09-01",
+            expiryDate = initialExpiry,
+            phone = "9876543214"
+        )
+        val customerId = classUnderTest.state.value.customers.first().id
+
+        // 1. Adding pending leave does not change expiryDate
+        classUnderTest.addLeave(
+            customerId = customerId,
+            from = "2026-10-01",
+            to = "2026-10-05",
+            reason = "Vacation"
+        )
+        val leaveId = classUnderTest.state.value.leaves.first().id
+        assertEquals(LeaveStatus.PENDING, classUnderTest.state.value.leaves.first().status)
+        assertEquals(initialExpiry, classUnderTest.state.value.customers.first { it.id == customerId }.expiryDate)
+
+        // 2. Marking leave as DECLINED does not change expiryDate
+        classUnderTest.updateLeaveStatus(leaveId, LeaveStatus.DECLINED)
+        val declinedLeave = classUnderTest.state.value.leaves.first { it.id == leaveId }
+        assertEquals(LeaveStatus.DECLINED, declinedLeave.status)
+        assertEquals(initialExpiry, classUnderTest.state.value.customers.first { it.id == customerId }.expiryDate)
+
+        // 3. Re-setting to PENDING does not change expiryDate
+        classUnderTest.updateLeaveStatus(leaveId, LeaveStatus.PENDING)
+        assertEquals(initialExpiry, classUnderTest.state.value.customers.first { it.id == customerId }.expiryDate)
+    }
+
+    @Test
+    fun `approving already approved leave does not duplicate extension`() {
+        val initialExpiry = "2026-10-31"
+        classUnderTest.addCustomer(
+            name = "Frank",
+            plan = "Monthly Veg",
+            joiningDate = "2026-09-01",
+            expiryDate = initialExpiry,
+            phone = "9876543215"
+        )
+        val customerId = classUnderTest.state.value.customers.first().id
+
+        classUnderTest.addLeave(
+            customerId = customerId,
+            from = "2026-10-01",
+            to = "2026-10-03", // 3 days
+            reason = "Trip"
+        )
+        val leaveId = classUnderTest.state.value.leaves.first().id
+
+        // First approval: extends by 3 days -> 2026-11-03
+        classUnderTest.updateLeaveStatus(leaveId, LeaveStatus.APPROVED)
+        val customerAfterFirstApproval = classUnderTest.state.value.customers.first { it.id == customerId }
+        assertEquals("2026-11-03", customerAfterFirstApproval.expiryDate)
+
+        // Second approval of same leave: must NOT extend again
+        classUnderTest.updateLeaveStatus(leaveId, LeaveStatus.APPROVED)
+        val customerAfterSecondApproval = classUnderTest.state.value.customers.first { it.id == customerId }
+        assertEquals("2026-11-03", customerAfterSecondApproval.expiryDate)
     }
 }
