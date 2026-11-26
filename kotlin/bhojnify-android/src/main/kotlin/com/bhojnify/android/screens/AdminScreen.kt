@@ -46,8 +46,9 @@ fun AdminScreen(navController: NavController, viewModel: MessViewModel) {
 
     val pendingLeaves = leaves.filter { it.status == LeaveStatus.PENDING }
     val lowStock = inventory.filter { it.quantity <= it.minimum }
-    val revenue = payments.sumOf { it.amount }
-    val spend = expenses.sumOf { it.amount }
+    val currentYearMonth = DateUtils.currentYearMonth()
+    val revenue = payments.filter { it.date.startsWith(currentYearMonth) }.sumOf { it.amount }
+    val spend = expenses.filter { it.date.startsWith(currentYearMonth) }.sumOf { it.amount }
     val today = DateUtils.todayString()
     val activeCustomerCount = customers.count { !DateUtils.getExpiryInfo(it.expiryDate).isExpired }
     val todayAttendanceCount = attendance.count { it.date == today }

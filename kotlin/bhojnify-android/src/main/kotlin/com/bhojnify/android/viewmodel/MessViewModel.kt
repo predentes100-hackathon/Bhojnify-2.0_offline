@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -32,24 +33,78 @@ class MessViewModel(application: Application) : AndroidViewModel(application) {
     private val _isReady = MutableStateFlow(false)
     val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
 
+    private val _selectedReportMonth = MutableStateFlow(DateUtils.currentYearMonth())
+    val selectedReportMonth: StateFlow<String> = _selectedReportMonth.asStateFlow()
+
     init {
         viewModelScope.launch {
             _isReady.value = true
         }
     }
 
-    val reportSummary: StateFlow<FinancialReportSummary> = state.map { s ->
-        ReportCalculator.calculate(
+    val reportSummary: StateFlow<FinancialReportSummary> = combine(state, _selectedReportMonth) { s, month ->
+        ReportCalculator.calculateForMonth(
+            yearMonth = month,
             payments = s.payments,
             expenses = s.expenses,
             inventory = s.inventory,
-            attendanceCount = s.attendance.size
+            attendance = s.attendance
         )
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
         ReportCalculator.calculate(emptyList(), emptyList(), emptyList(), 0)
     )
+
+    val monthlyRevenueGrowth: StateFlow<Double?> = combine(state, _selectedReportMonth) { s, month ->
+        val currentRevenue = s.payments.filter { it.date.startsWith(month) }.sumOf { it.amount }
+        val prevMonth = DateUtils.previousYearMonth(month)
+        val prevRevenue = s.payments.filter { it.date.startsWith(prevMonth) }.sumOf { it.amount }
+
+        ReportCalculator.calculateRevenueGrowth(currentRevenue, prevRevenue)
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        null
+    )
+
+    val selectedMonthExpenseBreakdown: StateFlow<Map<String, Double>> = combine(state, _selectedReportMonth) { s, month ->
+        s.expenses
+            .filter { it.date.startsWith(month) }
+            .groupBy { it.category }
+            .mapValues { (_, list) -> list.sumOf { it.amount } }
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyMap()
+    )
+
+    val selectedMonthPaymentBreakdown: StateFlow<Map<String, Double>> = combine(state, _selectedReportMonth) { s, month ->
+        s.payments
+            .filter { it.date.startsWith(month) }
+            .groupBy { it.method }
+            .mapValues { (_, list) -> list.sumOf { it.amount } }
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyMap()
+    )
+
+    fun setReportMonth(yearMonth: String) {
+        _selectedReportMonth.value = yearMonth
+    }
+
+    fun selectPreviousReportMonth() {
+        _selectedReportMonth.value = DateUtils.previousYearMonth(_selectedReportMonth.value)
+    }
+
+    fun selectNextReportMonth() {
+        _selectedReportMonth.value = DateUtils.nextYearMonth(_selectedReportMonth.value)
+    }
+
+    fun selectCurrentReportMonth() {
+        _selectedReportMonth.value = DateUtils.currentYearMonth()
+    }
 
     fun t(key: String, variables: Map<String, Any> = emptyMap()): String {
         return I18n.translate(state.value.language, key, variables)

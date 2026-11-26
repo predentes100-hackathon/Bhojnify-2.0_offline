@@ -4,6 +4,7 @@ import com.bhojnify.core.i18n.Language
 import com.bhojnify.core.model.ExpiryInfo
 import com.bhojnify.core.model.ExpiryStatus
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
@@ -12,8 +13,50 @@ object DateUtils {
 
     private val ISO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
+    private val MARATHI_MONTHS = arrayOf(
+        "जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून",
+        "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"
+    )
+
     fun todayString(): String {
         return LocalDate.now().format(ISO_FORMATTER)
+    }
+
+    fun currentYearMonth(): String {
+        return todayString().take(7)
+    }
+
+    fun previousYearMonth(yearMonth: String): String {
+        return try {
+            val ym = YearMonth.parse(yearMonth.trim().take(7))
+            ym.minusMonths(1).toString()
+        } catch (e: Exception) {
+            yearMonth
+        }
+    }
+
+    fun nextYearMonth(yearMonth: String): String {
+        return try {
+            val ym = YearMonth.parse(yearMonth.trim().take(7))
+            ym.plusMonths(1).toString()
+        } catch (e: Exception) {
+            yearMonth
+        }
+    }
+
+    fun formatYearMonth(yearMonth: String, language: Language = Language.EN): String {
+        return try {
+            val ym = YearMonth.parse(yearMonth.trim().take(7))
+            if (language == Language.MR) {
+                val monthName = MARATHI_MONTHS[ym.monthValue - 1]
+                "$monthName ${ym.year}"
+            } else {
+                val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)
+                ym.format(formatter)
+            }
+        } catch (e: Exception) {
+            yearMonth
+        }
     }
 
     fun parseDate(dateStr: String): LocalDate {

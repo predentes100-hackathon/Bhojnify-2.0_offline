@@ -101,4 +101,21 @@ class DateUtilsTest {
         val leapYearInfo2 = DateUtils.getExpiryInfo("2028-03-01", "2028-02-28")
         assertEquals(2L, leapYearInfo2.daysRemaining)
     }
+
+    @Test
+    fun `test year month navigation and formatting`() {
+        assertEquals("2026-10", DateUtils.previousYearMonth("2026-11"))
+        assertEquals("2026-12", DateUtils.nextYearMonth("2026-11"))
+        assertEquals("2025-12", DateUtils.previousYearMonth("2026-01"))
+        assertEquals("2027-01", DateUtils.nextYearMonth("2026-12"))
+
+        assertEquals("November 2026", DateUtils.formatYearMonth("2026-11", com.bhojnify.core.i18n.Language.EN))
+        assertEquals("नोव्हेंबर 2026", DateUtils.formatYearMonth("2026-11", com.bhojnify.core.i18n.Language.MR))
+        assertEquals("जानेवारी 2027", DateUtils.formatYearMonth("2027-01", com.bhojnify.core.i18n.Language.MR))
+
+        // Defensive trimming and full-date string handling
+        assertEquals("2026-10", DateUtils.previousYearMonth("2026-11-15"))
+        assertEquals("2026-12", DateUtils.nextYearMonth("  2026-11  "))
+        assertEquals("November 2026", DateUtils.formatYearMonth("2026-11-20", com.bhojnify.core.i18n.Language.EN))
+    }
 }
