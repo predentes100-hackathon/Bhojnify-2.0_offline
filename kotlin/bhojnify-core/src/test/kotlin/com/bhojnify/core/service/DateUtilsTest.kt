@@ -118,4 +118,49 @@ class DateUtilsTest {
         assertEquals("2026-12", DateUtils.nextYearMonth("  2026-11  "))
         assertEquals("November 2026", DateUtils.formatYearMonth("2026-11-20", com.bhojnify.core.i18n.Language.EN))
     }
+
+    @Test
+    fun `test DateUtils safe fallback parsing on malformed inputs`() {
+        // parseDate should not throw on invalid dates, falls back to today
+        val fallbackDate = DateUtils.parseDate("not-a-valid-date")
+        assertEquals(java.time.LocalDate.now(), fallbackDate)
+
+        val emptyFallback = DateUtils.parseDate("")
+        assertEquals(java.time.LocalDate.now(), emptyFallback)
+
+        val nullFallback = DateUtils.parseDate(null)
+        assertEquals(java.time.LocalDate.now(), nullFallback)
+
+        val invalidFormat = DateUtils.parseDate("2026/13/45")
+        assertEquals(java.time.LocalDate.now(), invalidFormat)
+
+        // parseDateOrNull returns null on invalid dates
+        assertEquals(null, DateUtils.parseDateOrNull("invalid"))
+        assertEquals(null, DateUtils.parseDateOrNull(""))
+        assertEquals(null, DateUtils.parseDateOrNull(null))
+
+        // getExpiryInfo should not throw on malformed dates, returns safe ACTIVE status
+        val malformedExpiryInfo = DateUtils.getExpiryInfo("invalid-date-string")
+        assertEquals(ExpiryStatus.ACTIVE, malformedExpiryInfo.status)
+        assertEquals(0L, malformedExpiryInfo.daysRemaining)
+        assertFalse(malformedExpiryInfo.isExpired)
+        assertFalse(malformedExpiryInfo.isExpiringSoon)
+        assertFalse(malformedExpiryInfo.isExpiringToday)
+
+        // daysBetween should safely return 0 on unparseable inputs
+        assertEquals(0L, DateUtils.daysBetween("bad-date", "2026-10-01"))
+        assertEquals(0L, DateUtils.daysBetween("2026-10-01", "bad-date"))
+
+        // daysUntil should safely return 0 on unparseable inputs
+        assertEquals(0L, DateUtils.daysUntil("bad-date"))
+
+        // addDays should safely fallback on invalid date input
+        val fallbackAddDays = DateUtils.addDays("garbage-input", 5)
+        val expectedFallbackAddDays = java.time.LocalDate.now().plusDays(5).format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+        assertEquals(expectedFallbackAddDays, fallbackAddDays)
+
+        // formatDate should return original string on unparseable input without throwing
+        assertEquals("not-a-date", DateUtils.formatDate("not-a-date"))
+        assertEquals("not-a-date", DateUtils.formatDateFull("not-a-date"))
+    }
 }

@@ -22,11 +22,37 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePath = project.findProperty("BHOJNIFY_RELEASE_KEYSTORE") as? String
+                ?: System.getenv("BHOJNIFY_RELEASE_KEYSTORE")
+            val keystorePassword = project.findProperty("BHOJNIFY_RELEASE_KEYSTORE_PASSWORD") as? String
+                ?: System.getenv("BHOJNIFY_RELEASE_KEYSTORE_PASSWORD")
+            val keyAlias = project.findProperty("BHOJNIFY_RELEASE_KEY_ALIAS") as? String
+                ?: System.getenv("BHOJNIFY_RELEASE_KEY_ALIAS")
+            val keyPassword = project.findProperty("BHOJNIFY_RELEASE_KEY_PASSWORD") as? String
+                ?: System.getenv("BHOJNIFY_RELEASE_KEY_PASSWORD")
+
+            if (keystorePath != null && file(keystorePath).exists()) {
+                storeFile = file(keystorePath)
+                storePassword = keystorePassword
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
+            } else {
+                val debugConfig = signingConfigs.getByName("debug")
+                storeFile = debugConfig.storeFile
+                storePassword = debugConfig.storePassword
+                this.keyAlias = debugConfig.keyAlias
+                this.keyPassword = debugConfig.keyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -35,12 +61,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "21"
     }
 
     buildFeatures {

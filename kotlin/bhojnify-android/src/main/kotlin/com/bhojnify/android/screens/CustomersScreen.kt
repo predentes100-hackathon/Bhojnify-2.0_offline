@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -25,10 +26,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,6 +65,12 @@ import com.bhojnify.core.service.DateUtils
 
 enum class CustomerFilter { ALL, ACTIVE, EXPIRING, EXPIRED, UNPAID }
 enum class CustomerSortBy { NAME, JOINING_DATE_NEWEST, JOINING_DATE_OLDEST, EXPIRY_DATE_EARLIEST, EXPIRY_DATE_LATEST }
+enum class CustomerViewMode { LIST, REGISTER }
+
+private fun isValidDate(dateStr: String): Boolean {
+    val trimmed = dateStr.trim()
+    return trimmed.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) && DateUtils.parseDateOrNull(trimmed) != null
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -82,6 +91,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
     var activeFilter by remember { mutableStateOf(CustomerFilter.ALL) }
     var sortBy by remember { mutableStateOf(CustomerSortBy.EXPIRY_DATE_EARLIEST) }
     var showSortMenu by remember { mutableStateOf(false) }
+    var viewMode by rememberSaveable { mutableStateOf(CustomerViewMode.LIST) }
 
     // Add Customer Dialog State
     var showAddDialog by remember { mutableStateOf(false) }
@@ -127,21 +137,31 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
             plan.contains("Daily") -> 1L
             else -> 30L
         }
-        expiryDate = DateUtils.addDays(joiningDate, days)
+        val baseDate = if (isValidDate(joiningDate)) joiningDate.trim() else todayStr
+        expiryDate = DateUtils.addDays(baseDate, days)
     }
 
     val handleCreateCustomer = {
         formSubmitted = true
         val finalPlan = if (selectedPlan == "Custom Plan") customPlan.trim() else selectedPlan
-        if (name.trim().isEmpty() || finalPlan.isEmpty() || joiningDate.trim().isEmpty() || expiryDate.trim().isEmpty() || phone.trim().isEmpty()) {
+        val cleanJoining = joiningDate.trim()
+        val cleanExpiry = expiryDate.trim()
+        val cleanPhone = phone.trim()
+        val cleanName = name.trim()
+
+        if (cleanName.isEmpty() || finalPlan.isEmpty() || cleanJoining.isEmpty() || cleanExpiry.isEmpty() || cleanPhone.isEmpty()) {
             Toast.makeText(context, viewModel.t("customerRequiredMessage"), Toast.LENGTH_SHORT).show()
+        } else if (!isValidDate(cleanJoining) || !isValidDate(cleanExpiry)) {
+            Toast.makeText(context, viewModel.t("invalidDate"), Toast.LENGTH_SHORT).show()
+        } else if (DateUtils.parseDate(cleanExpiry).isBefore(DateUtils.parseDate(cleanJoining))) {
+            Toast.makeText(context, viewModel.t("expiryBeforeJoining"), Toast.LENGTH_SHORT).show()
         } else {
             viewModel.addCustomer(
-                name = name.trim(),
+                name = cleanName,
                 plan = finalPlan,
-                joiningDate = joiningDate.trim(),
-                expiryDate = expiryDate.trim(),
-                phone = phone.trim(),
+                joiningDate = cleanJoining,
+                expiryDate = cleanExpiry,
+                phone = cleanPhone,
                 paymentStatus = paymentStatus,
                 imageUri = selectedImageUri?.toString(),
                 initialAmount = initialAmount.toDoubleOrNull()
@@ -262,7 +282,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                     title = viewModel.t("customers"),
                     subtitle = viewModel.t("customerListSubtitle"),
                     actionContentDescription = viewModel.t("profile"),
-                    onActionClick = { navController.navigate(Routes.ADMIN) }
+                    onActionClick = { navController.navigate(Routes.PROFILE) }
                 )
             }
 
@@ -303,6 +323,78 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         )
+                    }
+                }
+            }
+
+            item(key = "view_mode_toggle") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .border(1.dp, colors.border, RoundedCornerShape(14.dp))
+                        .background(colors.card)
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // Card List Mode Tab
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (viewMode == CustomerViewMode.LIST) colors.primary else Color.Transparent)
+                            .clickable { viewMode = CustomerViewMode.LIST }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ViewStream,
+                                contentDescription = null,
+                                tint = if (viewMode == CustomerViewMode.LIST) colors.primaryForeground else colors.mutedForeground,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = viewModel.t("listView"),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (viewMode == CustomerViewMode.LIST) colors.primaryForeground else colors.foreground
+                            )
+                        }
+                    }
+
+                    // Register / Ledger Mode Tab
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (viewMode == CustomerViewMode.REGISTER) colors.primary else Color.Transparent)
+                            .clickable { viewMode = CustomerViewMode.REGISTER }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                                contentDescription = null,
+                                tint = if (viewMode == CustomerViewMode.REGISTER) colors.primaryForeground else colors.mutedForeground,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = viewModel.t("registerMode"),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (viewMode == CustomerViewMode.REGISTER) colors.primaryForeground else colors.foreground
+                            )
+                        }
                     }
                 }
             }
@@ -576,7 +668,7 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                         )
                     }
                 }
-            } else {
+            } else if (viewMode == CustomerViewMode.LIST) {
                 items(filteredCustomers, key = { it.id }) { customer ->
                     val info = customerExpiryMap[customer.id] ?: DateUtils.getExpiryInfo(customer.expiryDate, todayStr)
                     val daysRemaining = info.daysRemaining
@@ -606,16 +698,28 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                         renewLabel = viewModel.t("renewPlan"),
                         onCustomerClick = { selectedCustomerForDetails = customer },
                         onCallClick = {
-                            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${customer.phone}"))
-                            context.startActivity(intent)
+                            try {
+                                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${customer.phone}"))
+                                context.startActivity(intent)
+                            } catch (e: ActivityNotFoundException) {
+                                Toast.makeText(context, "No app found to handle phone calls", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Unable to place call", Toast.LENGTH_SHORT).show()
+                            }
                         },
                         onWhatsAppClick = {
-                            val cleanPhone = customer.phone.replace(Regex("[^0-9]"), "").let {
-                                if (it.length == 10) "91$it" else it
+                            try {
+                                val cleanPhone = customer.phone.replace(Regex("[^0-9]"), "").let {
+                                    if (it.length == 10) "91$it" else it
+                                }
+                                val url = "https://wa.me/$cleanPhone?text=Hello%20${Uri.encode(customer.name)}"
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                context.startActivity(intent)
+                            } catch (e: ActivityNotFoundException) {
+                                Toast.makeText(context, "WhatsApp is not installed", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Unable to open WhatsApp", Toast.LENGTH_SHORT).show()
                             }
-                            val url = "https://wa.me/$cleanPhone?text=Hello%20${Uri.encode(customer.name)}"
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                            context.startActivity(intent)
                         },
                         onRenewClick = {
                             val prevCustomer = customer
@@ -633,6 +737,49 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                                 }
                             }
                         }
+                    )
+                }
+            } else {
+                item(key = "customer_register_view") {
+                    CustomerRegisterView(
+                        customers = filteredCustomers,
+                        customerExpiryMap = customerExpiryMap,
+                        todayStr = todayStr,
+                        onCustomerClick = { selectedCustomerForDetails = it },
+                        onCallClick = { customer ->
+                            try {
+                                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${customer.phone}"))
+                                context.startActivity(intent)
+                            } catch (e: ActivityNotFoundException) {
+                                Toast.makeText(context, "No app found to handle phone calls", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Unable to place call", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        onWhatsAppClick = { customer ->
+                            try {
+                                val cleanPhone = customer.phone.replace(Regex("[^0-9]"), "").let {
+                                    if (it.length == 10) "91$it" else it
+                                }
+                                val url = "https://wa.me/$cleanPhone?text=Hello%20${Uri.encode(customer.name)}"
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                context.startActivity(intent)
+                            } catch (e: ActivityNotFoundException) {
+                                Toast.makeText(context, "WhatsApp is not installed", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Unable to open WhatsApp", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        onEditClick = { customer ->
+                            editName = customer.name
+                            editPhone = customer.phone
+                            editPlan = customer.plan
+                            editJoiningDate = customer.joiningDate
+                            editExpiryDate = customer.expiryDate
+                            editPaymentStatus = customer.paymentStatus
+                            customerToEdit = customer
+                        },
+                        t = { viewModel.t(it) }
                     )
                 }
             }
@@ -886,8 +1033,14 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                     ) {
                         Button(
                             onClick = {
-                                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${customer.phone}"))
-                                context.startActivity(intent)
+                                try {
+                                    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${customer.phone}"))
+                                    context.startActivity(intent)
+                                } catch (e: ActivityNotFoundException) {
+                                    Toast.makeText(context, "No app found to handle phone calls", Toast.LENGTH_SHORT).show()
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Unable to place call", Toast.LENGTH_SHORT).show()
+                                }
                             },
                             modifier = Modifier.weight(1f).height(42.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.secondary, contentColor = colors.primary),
@@ -900,12 +1053,18 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
 
                         Button(
                             onClick = {
-                                val cleanPhone = customer.phone.replace(Regex("[^0-9]"), "").let {
-                                    if (it.length == 10) "91$it" else it
+                                try {
+                                    val cleanPhone = customer.phone.replace(Regex("[^0-9]"), "").let {
+                                        if (it.length == 10) "91$it" else it
+                                    }
+                                    val url = "https://wa.me/$cleanPhone?text=Hello%20${Uri.encode(customer.name)}"
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                    context.startActivity(intent)
+                                } catch (e: ActivityNotFoundException) {
+                                    Toast.makeText(context, "WhatsApp is not installed", Toast.LENGTH_SHORT).show()
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Unable to open WhatsApp", Toast.LENGTH_SHORT).show()
                                 }
-                                val url = "https://wa.me/$cleanPhone?text=Hello%20${Uri.encode(customer.name)}"
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                                context.startActivity(intent)
                             },
                             modifier = Modifier.weight(1f).height(42.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE8F5E9), contentColor = Color(0xFF2E7D32)),
@@ -1050,12 +1209,31 @@ fun CustomersScreen(navController: NavController, viewModel: MessViewModel) {
                         Button(onClick = { customerToEdit = null }, modifier = Modifier.weight(1f).height(46.dp), colors = ButtonDefaults.buttonColors(containerColor = colors.secondary, contentColor = colors.foreground), shape = RoundedCornerShape(13.dp)) { Text(viewModel.t("cancel"), fontWeight = FontWeight.Bold) }
                         Button(
                             onClick = {
-                                if (editName.isNotBlank() && editPhone.isNotBlank()) {
-                                    viewModel.updateCustomer(original.id) { it.copy(name = editName.trim(), phone = editPhone.trim(), plan = editPlan.trim(), joiningDate = editJoiningDate.trim(), expiryDate = editExpiryDate.trim(), paymentStatus = editPaymentStatus) }
+                                val cleanName = editName.trim()
+                                val cleanPhone = editPhone.trim()
+                                val cleanPlan = editPlan.trim()
+                                val cleanJoining = editJoiningDate.trim()
+                                val cleanExpiry = editExpiryDate.trim()
+
+                                if (cleanName.isBlank() || cleanPhone.isBlank()) {
+                                    Toast.makeText(context, viewModel.t("namePhoneRequired"), Toast.LENGTH_SHORT).show()
+                                } else if (!isValidDate(cleanJoining) || !isValidDate(cleanExpiry)) {
+                                    Toast.makeText(context, viewModel.t("invalidDate"), Toast.LENGTH_SHORT).show()
+                                } else if (DateUtils.parseDate(cleanExpiry).isBefore(DateUtils.parseDate(cleanJoining))) {
+                                    Toast.makeText(context, viewModel.t("expiryBeforeJoining"), Toast.LENGTH_SHORT).show()
+                                } else {
+                                    viewModel.updateCustomer(original.id) {
+                                        it.copy(
+                                            name = cleanName,
+                                            phone = cleanPhone,
+                                            plan = cleanPlan,
+                                            joiningDate = cleanJoining,
+                                            expiryDate = cleanExpiry,
+                                            paymentStatus = editPaymentStatus
+                                        )
+                                    }
                                     Toast.makeText(context, viewModel.t("customerUpdated"), Toast.LENGTH_SHORT).show()
                                     customerToEdit = null
-                                } else {
-                                    Toast.makeText(context, viewModel.t("namePhoneRequired"), Toast.LENGTH_SHORT).show()
                                 }
                             },
                             modifier = Modifier.weight(2f).height(46.dp), colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = colors.primaryForeground), shape = RoundedCornerShape(13.dp)
